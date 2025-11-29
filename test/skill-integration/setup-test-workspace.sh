@@ -73,7 +73,6 @@ This workspace is set up to test the temporal-java.md skill.
 
 - `.claude/skills/temporal-java.md` - The skill being tested
 - `test-prompt.txt` - The prompt to send to Claude Code
-- `validate.sh` - Script to validate the generated application
 
 ## How to Run the Test
 
@@ -87,12 +86,12 @@ This workspace is set up to test the temporal-java.md skill.
 
 2. Start Claude Code session and send the prompt from `test-prompt.txt`
 
-3. After Claude generates the application, run validation:
+3. After Claude generates the application, validate it:
    ```bash
-   ./validate.sh
+   cd ../.. && python3 claude_validate.py test-workspace
    ```
 
-### Option 2: Automated Testing (if Claude Code CLI is available)
+### Option 2: Automated Testing
 
 Run the automated test from the parent directory:
 ```bash
@@ -102,126 +101,16 @@ cd ..
 
 ## Expected Generated Structure
 
-```
-src/main/java/io/temporal/hello/
-├── HelloWorldWorker.java
-├── HelloWorldClient.java
-├── workflows/
-│   ├── HelloWorldWorkflow.java
-│   └── HelloWorldWorkflowImpl.java
-└── activities/
-    ├── HelloWorldActivities.java
-    └── HelloWorldActivitiesImpl.java
-pom.xml
-```
+The generated structure will vary but should include:
+- pom.xml with Temporal SDK dependency
+- Workflow interface and implementation
+- Activity interface and implementation
+- Worker class to register workflows/activities
+- Client class to start workflows
+
+The exact directory structure (e.g., workflow/ vs workflows/) and file names
+may vary. Claude validation will intelligently analyze the structure.
 EOF
-
-# Create validation script for the workspace
-cat > "$WORKSPACE_DIR/validate.sh" <<'VALIDATION_SCRIPT'
-#!/bin/bash
-
-set -e
-
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-RED='\033[0;31m'
-NC='\033[0m'
-
-echo -e "${YELLOW}=== Validating Generated Temporal Application ===${NC}\n"
-
-# Check if pom.xml exists
-if [ ! -f "pom.xml" ]; then
-    echo -e "${RED}✗ pom.xml not found - application not generated${NC}"
-    exit 1
-fi
-echo -e "${GREEN}✓ Found pom.xml${NC}"
-
-# Check if required Java files exist
-# Look for workflow/activity files (names may vary based on generation)
-WORKFLOW_FILES=$(find src/main/java/io/temporal/hello/workflows -name "*Workflow*.java" 2>/dev/null | wc -l)
-ACTIVITY_FILES=$(find src/main/java/io/temporal/hello/activities -name "*Activities*.java" 2>/dev/null | wc -l)
-WORKER_FILES=$(find src/main/java/io/temporal/hello -maxdepth 1 -name "*Worker*.java" 2>/dev/null | wc -l)
-CLIENT_FILES=$(find src/main/java/io/temporal/hello -maxdepth 1 -name "*Client*.java" 2>/dev/null | wc -l)
-
-if [ "$WORKFLOW_FILES" -lt 2 ]; then
-    echo -e "${RED}✗ Expected at least 2 workflow files (interface + impl)${NC}"
-    exit 1
-fi
-
-if [ "$ACTIVITY_FILES" -lt 2 ]; then
-    echo -e "${RED}✗ Expected at least 2 activity files (interface + impl)${NC}"
-    exit 1
-fi
-
-if [ "$WORKER_FILES" -lt 1 ]; then
-    echo -e "${RED}✗ Expected at least 1 worker file${NC}"
-    exit 1
-fi
-
-if [ "$CLIENT_FILES" -lt 1 ]; then
-    echo -e "${RED}✗ Expected at least 1 client file${NC}"
-    exit 1
-fi
-
-echo -e "${GREEN}✓ Found workflow files: $WORKFLOW_FILES${NC}"
-echo -e "${GREEN}✓ Found activity files: $ACTIVITY_FILES${NC}"
-echo -e "${GREEN}✓ Found worker file(s): $WORKER_FILES${NC}"
-echo -e "${GREEN}✓ Found client file(s): $CLIENT_FILES${NC}"
-
-# Check for signal method in workflow (advanced feature)
-if grep -r "@SignalMethod" src/main/java/io/temporal/hello/workflows/ > /dev/null 2>&1; then
-    echo -e "${GREEN}✓ Found @SignalMethod annotation (signal pattern implemented)${NC}"
-else
-    echo -e "${YELLOW}! Warning: No @SignalMethod found - signal pattern may not be implemented${NC}"
-fi
-
-REQUIRED_FILES=()
-
-for file in "${REQUIRED_FILES[@]}"; do
-    if [ ! -f "$file" ]; then
-        echo -e "${RED}✗ Missing: $file${NC}"
-        exit 1
-    fi
-    echo -e "${GREEN}✓ Found: $file${NC}"
-done
-
-# Validate pom.xml contains Temporal SDK
-if ! grep -q "io.temporal" pom.xml; then
-    echo -e "${RED}✗ pom.xml doesn't contain Temporal SDK dependency${NC}"
-    exit 1
-fi
-echo -e "${GREEN}✓ pom.xml contains Temporal SDK dependency${NC}"
-
-# Extract version from pom.xml
-TEMPORAL_VERSION=$(grep -A 1 "temporal-sdk" pom.xml | grep "<version>" | sed 's/.*<version>\(.*\)<\/version>.*/\1/' | head -1)
-if [ -z "$TEMPORAL_VERSION" ]; then
-    echo -e "${YELLOW}! Warning: Could not extract Temporal SDK version${NC}"
-else
-    echo -e "${GREEN}✓ Using Temporal SDK version: $TEMPORAL_VERSION${NC}"
-fi
-
-# Check if Maven is installed
-if ! command -v mvn &> /dev/null; then
-    echo -e "${YELLOW}! Maven not found - skipping build test${NC}"
-    echo -e "\n${GREEN}=== Structure Validation PASSED ===${NC}"
-    exit 0
-fi
-
-# Try to build the project
-echo -e "\n${YELLOW}Building project...${NC}"
-if mvn clean compile > build.log 2>&1; then
-    echo -e "${GREEN}✓ Build successful!${NC}"
-else
-    echo -e "${RED}✗ Build failed - check build.log for details${NC}"
-    tail -20 build.log
-    exit 1
-fi
-
-echo -e "\n${GREEN}=== Structure & Build Validation PASSED ===${NC}"
-echo -e "\nTo test execution, run: ${YELLOW}./test-execution.sh${NC}"
-VALIDATION_SCRIPT
-
-chmod +x "$WORKSPACE_DIR/validate.sh"
 
 # Copy the execution test script to workspace
 echo -e "${YELLOW}Installing execution test script...${NC}"

@@ -43,7 +43,7 @@ if [ "$AUTOMATED" = false ]; then
     echo -e "2. In Claude Code, send this prompt:"
     echo -e "   ${YELLOW}cat test-prompt.txt${NC} and send the content to Claude\n"
     echo -e "3. After Claude generates the code, validate it:"
-    echo -e "   ${YELLOW}./validate.sh${NC}\n"
+    echo -e "   ${YELLOW}cd $SCRIPT_DIR && python3 claude_validate.py $WORKSPACE_DIR${NC}\n"
     echo -e "4. If validation passes, the test is successful!\n"
     echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}\n"
     echo -e "Or set ANTHROPIC_API_KEY for automated testing:"
@@ -85,11 +85,11 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-# Step 5: Validate structure and build
-echo -e "\n${YELLOW}[5/6] Validating generated application...${NC}"
+# Step 5: Validate structure and build with Claude
+echo -e "\n${YELLOW}[5/6] Validating generated application with Claude AI...${NC}"
 
-cd "$WORKSPACE_DIR"
-./validate.sh
+cd "$SCRIPT_DIR"
+python3 claude_validate.py "$WORKSPACE_DIR"
 
 if [ $? -ne 0 ]; then
     echo -e "\n${RED}╔════════════════════════════════════════════════╗${NC}"

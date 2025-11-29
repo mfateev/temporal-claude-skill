@@ -50,104 +50,32 @@ setup_workspace() {
     # Copy Spring Boot prompt
     cp "${SCRIPT_DIR}/test-spring-boot-prompt.txt" "${WORKSPACE_DIR}/test-prompt.txt"
 
-    # Create validation script
-    cat > "${WORKSPACE_DIR}/validate.sh" << 'EOF'
-#!/bin/bash
-set -e
+    # Note: Validation will be done by claude_validate.py, no need to create validate.sh
 
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-RED='\033[0;31m'
-NC='\033[0m'
+    # Create placeholder validation info (optional)
+    cat > "${WORKSPACE_DIR}/VALIDATION.md" << 'EOF'
+# Spring Boot Temporal Application Validation
 
-echo -e "${YELLOW}=== Validating Spring Boot Temporal Application ===${NC}"
-echo ""
+This workspace uses Claude-powered validation to intelligently analyze
+the generated Spring Boot Temporal application.
 
-# Check for pom.xml
-if [ ! -f "pom.xml" ]; then
-    echo -e "${RED}✗ pom.xml not found${NC}"
-    exit 1
-fi
-echo -e "${GREEN}✓ Found pom.xml${NC}"
+## What Claude Validates
 
-# Check Spring Boot parent
-if grep -q "spring-boot-starter-parent" pom.xml; then
-    echo -e "${GREEN}✓ Found Spring Boot parent in pom.xml${NC}"
-else
-    echo -e "${RED}✗ Spring Boot parent not found in pom.xml${NC}"
-    exit 1
-fi
+- **Structure**: pom.xml with Spring Boot parent and temporal-spring-boot-starter
+- **Workflows**: @WorkflowInterface, @WorkflowImpl annotations
+- **Activities**: @ActivityInterface, @ActivityImpl annotations
+- **Application**: Spring Boot @SpringBootApplication class
+- **Configuration**: application.yml (optional)
+- **Advanced Features**: Signals, queries, tests
 
-# Check Spring Boot Temporal starter
-if grep -q "temporal-spring-boot-starter" pom.xml; then
-    echo -e "${GREEN}✓ Found temporal-spring-boot-starter dependency${NC}"
-else
-    echo -e "${RED}✗ temporal-spring-boot-starter dependency not found${NC}"
-    exit 1
-fi
+## Run Validation
 
-# Check for application.yml
-if [ -f "src/main/resources/application.yml" ] || [ -f "src/main/resources/application.yaml" ]; then
-    echo -e "${GREEN}✓ Found application.yml configuration${NC}"
-else
-    echo -e "${YELLOW}⚠ No application.yml found (may use defaults)${NC}"
-fi
+```bash
+cd ../.. && python3 claude_validate.py test-workspace-spring
+```
 
-# Check for workflow files
-WORKFLOW_COUNT=$(find src/main/java -name "*Workflow*.java" 2>/dev/null | wc -l)
-echo -e "${GREEN}✓ Found workflow files:        ${WORKFLOW_COUNT}${NC}"
-
-# Check for activity files
-ACTIVITY_COUNT=$(find src/main/java -name "*Activit*.java" 2>/dev/null | wc -l)
-echo -e "${GREEN}✓ Found activity files:        ${ACTIVITY_COUNT}${NC}"
-
-# Check for Spring Boot application
-APP_COUNT=$(find src/main/java -name "*Application.java" 2>/dev/null | wc -l)
-if [ $APP_COUNT -gt 0 ]; then
-    echo -e "${GREEN}✓ Found Spring Boot application: ${APP_COUNT}${NC}"
-else
-    echo -e "${RED}✗ No Spring Boot application class found${NC}"
-    exit 1
-fi
-
-# Check for @WorkflowImpl annotation
-if grep -r "@WorkflowImpl" src/main/java 2>/dev/null | grep -q "io.temporal.spring.boot"; then
-    echo -e "${GREEN}✓ Found @WorkflowImpl annotation (Spring Boot)${NC}"
-else
-    echo -e "${YELLOW}⚠ @WorkflowImpl annotation not found${NC}"
-fi
-
-# Check for @ActivityImpl annotation
-if grep -r "@ActivityImpl" src/main/java 2>/dev/null | grep -q "io.temporal.spring.boot"; then
-    echo -e "${GREEN}✓ Found @ActivityImpl annotation (Spring Boot)${NC}"
-else
-    echo -e "${YELLOW}⚠ @ActivityImpl annotation not found${NC}"
-fi
-
-# Check for signal method
-if grep -r "@SignalMethod" src/main/java 2>/dev/null | grep -q "SignalMethod"; then
-    echo -e "${GREEN}✓ Found @SignalMethod annotation (signal pattern implemented)${NC}"
-else
-    echo -e "${YELLOW}⚠ @SignalMethod annotation not found${NC}"
-fi
-
-# Build the project
-echo ""
-echo -e "${YELLOW}Building project...${NC}"
-if mvn clean compile -q; then
-    echo -e "${GREEN}✓ Build successful!${NC}"
-else
-    echo -e "${RED}✗ Build failed${NC}"
-    exit 1
-fi
-
-echo ""
-echo -e "${GREEN}=== Spring Boot Application Validation PASSED ===${NC}"
-echo ""
-echo "To run the application:"
-echo -e "  ${YELLOW}mvn spring-boot:run${NC}"
+Claude will provide detailed feedback on structure, patterns, and code quality.
 EOF
-    chmod +x "${WORKSPACE_DIR}/validate.sh"
 
     print_success "Workspace ready at: ${WORKSPACE_DIR}"
 }
@@ -203,12 +131,12 @@ generate_application() {
     fi
 }
 
-# Step 5: Validate
+# Step 5: Validate with Claude
 validate_application() {
-    print_step "[5/6] Validating generated Spring Boot application..."
+    print_step "[5/6] Validating generated Spring Boot application with Claude AI..."
 
-    cd "${WORKSPACE_DIR}"
-    if ./validate.sh; then
+    cd "${SCRIPT_DIR}"
+    if python3 claude_validate.py "${WORKSPACE_DIR}"; then
         print_success "Validation passed"
     else
         print_error "Validation failed"

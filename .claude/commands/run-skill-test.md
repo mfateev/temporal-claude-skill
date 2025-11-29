@@ -12,12 +12,17 @@ cd test/skill-integration && ./run-integration-test.sh
 The test will:
 - Set up test workspace with skill
 - Use Anthropic API to generate Temporal application
-- Validate generated code structure and compilation
-- Run execution tests with Temporal server
+- Use Claude AI to intelligently validate the generated code structure
+- Test compilation with Maven
+- Run execution tests with Temporal server (optional)
 - Report pass/fail results
 
 Monitor the output and report:
 - Whether code generation succeeded
-- Whether validation passed (structure + build)
-- Whether execution tests passed
-- Any errors encountered
+- Claude's validation assessment (structure, patterns, quality)
+- Whether compilation succeeded
+- Whether execution tests passed (if run)
+- Any errors or warnings encountered
+
+Note: Validation is now performed by Claude AI, which provides intelligent
+analysis of the generated code structure, Temporal patterns, and code quality.
