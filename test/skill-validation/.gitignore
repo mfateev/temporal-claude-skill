@@ -1,0 +1,14 @@
+# Generated application
+generated-app/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+*.so
+.venv/
+venv/
+
+# Logs
+*.log
