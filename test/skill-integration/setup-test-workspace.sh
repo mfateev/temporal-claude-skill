@@ -210,22 +210,17 @@ else
     exit 1
 fi
 
-# Check if Temporal server is running for execution test
-echo -e "\n${YELLOW}Checking for Temporal server...${NC}"
-if curl -s http://localhost:7233 > /dev/null 2>&1; then
-    echo -e "${GREEN}✓ Temporal server is running${NC}"
-    echo -e "\n${YELLOW}You can now test the application:${NC}"
-    echo -e "  1. Start worker: ${YELLOW}mvn exec:java -Dexec.mainClass=\"io.temporal.hello.HelloWorldWorker\"${NC}"
-    echo -e "  2. Run client: ${YELLOW}mvn exec:java -Dexec.mainClass=\"io.temporal.hello.HelloWorldClient\" -Dexec.args=\"YourName\"${NC}"
-else
-    echo -e "${YELLOW}! Temporal server not running - skipping execution test${NC}"
-    echo -e "  To test execution, start Temporal: ${YELLOW}docker run -p 7233:7233 -p 8233:8233 temporalio/auto-setup:latest${NC}"
-fi
-
-echo -e "\n${GREEN}=== Validation PASSED ===${NC}"
+echo -e "\n${GREEN}=== Structure & Build Validation PASSED ===${NC}"
+echo -e "\nTo test execution, run: ${YELLOW}./test-execution.sh${NC}"
 VALIDATION_SCRIPT
 
 chmod +x "$WORKSPACE_DIR/validate.sh"
+
+# Copy the execution test script to workspace
+echo -e "${YELLOW}Installing execution test script...${NC}"
+cp "$SCRIPT_DIR/test-execution.sh" "$WORKSPACE_DIR/"
+chmod +x "$WORKSPACE_DIR/test-execution.sh"
+echo -e "${GREEN}✓ Execution test script installed${NC}"
 
 echo -e "${GREEN}✓ Test workspace created successfully!${NC}\n"
 echo -e "Workspace location: ${YELLOW}$WORKSPACE_DIR${NC}"

@@ -32,6 +32,8 @@ Unlike a simple code validation test, this integration test:
 test/skill-integration/
 ├── setup-test-workspace.sh      # Creates test workspace with skill
 ├── run-integration-test.sh      # Runs the full integration test
+├── automate_test.py             # Python script for API automation
+├── test-execution.sh            # Execution test (runs worker/client)
 ├── .gitignore                   # Ignores generated workspace
 └── README.md                    # This file
 
@@ -41,9 +43,26 @@ test-workspace/
 │   └── skills/
 │       └── temporal-java.md     # The skill being tested
 ├── test-prompt.txt              # Prompt that triggers the skill
-├── validate.sh                  # Validates generated application
+├── validate.sh                  # Validates structure and build
+├── test-execution.sh            # Tests actual execution
 └── [generated code here]        # Application created by Claude
 ```
+
+## Test Components
+
+### 1. `validate.sh` - Structure & Build Validation
+- Checks all required files exist
+- Validates @SignalMethod pattern
+- Verifies Temporal SDK dependency
+- Compiles the project
+
+### 2. `test-execution.sh` - Execution Testing
+- **Temporal Management**: Checks if running, starts if needed
+- **Worker**: Starts in background, monitors startup
+- **Client**: Executes workflow with test data
+- **Verification**: Checks workflow completes successfully
+- **Cleanup**: Stops worker, stops Temporal if we started it
+- **Auto-cleanup**: Uses trap to cleanup on exit/error
 
 ## Prerequisites
 
@@ -56,11 +75,17 @@ test-workspace/
 - **Claude Code** installed and configured
 - **Java 11+** and **Maven** (for validation and building)
 
-### Optional (for execution test)
-- **Temporal Server** running:
+### For Execution Testing (Optional)
+- **Temporal CLI** installed:
   ```bash
-  docker run -p 7233:7233 -p 8233:8233 temporalio/auto-setup:latest
+  brew install temporal  # macOS
   ```
+  Or follow: https://docs.temporal.io/cli
+
+The execution test will automatically start Temporal if it's not running using:
+```bash
+temporal server start-dev
+```
 
 ## How Automation Works
 
@@ -94,8 +119,15 @@ This will:
 1. Set up the test workspace
 2. Use the Anthropic API to invoke Claude with the skill
 3. Generate the complete application automatically
-4. Validate the generated code
-5. Report success or failure
+4. Validate structure and build
+5. Test execution with Temporal (optional, skippable)
+6. Report success or failure
+
+**To skip execution test:**
+```bash
+export SKIP_EXECUTION=true
+./run-integration-test.sh
+```
 
 **Without API key:**
 ```bash
@@ -160,7 +192,19 @@ This validates:
 - ✅ Code structure matches expected layout
 - ✅ pom.xml contains Temporal SDK dependency
 - ✅ Project compiles successfully
-- ✅ (Optional) Application runs if Temporal server is available
+
+#### Step 6: Test execution (optional)
+```bash
+./test-execution.sh
+```
+
+This will:
+1. Check if Temporal server is running
+2. Start Temporal with `temporal server start-dev` if not running
+3. Start the worker in background
+4. Execute the workflow via client
+5. Verify workflow completes successfully
+6. Clean up (stop worker, stop Temporal if we started it)
 
 ## Expected Generated Structure
 
