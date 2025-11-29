@@ -1,27 +1,27 @@
-# Temporal Skills for Claude Code
+# Temporal Skill for Claude Code
 
-A collection of Claude Code skills that provide expert guidance on working with [Temporal.io](https://temporal.io) across multiple SDK languages. These skills help Claude assist developers in building reliable, distributed applications with Temporal.
+A comprehensive Claude Code skill for working with [Temporal.io](https://temporal.io) across multiple SDK languages. This skill helps Claude assist developers in building reliable, distributed applications with Temporal.
 
 ## What is this?
 
-This repository contains **skill packages** for Claude Code - structured knowledge resources that teach Claude how to help developers work with Temporal. Instead of embedding code directly, the skills provide:
+This repository contains a **single Temporal skill** for Claude Code with SDK-specific resources for each programming language. The skill provides:
 
+- Unified Temporal concepts and best practices
+- SDK-specific guidance as resources (Java, Python, TypeScript, Go, .NET, PHP)
 - Curated links to official Temporal documentation
-- Language-specific SDK guidance and best practices
-- Core concepts and API package information
 - Framework integration guidance (e.g., Spring Boot for Java)
 - Sample code references and patterns
 
-## Available SDKs
+## Architecture
 
-### Java SDK
-**Status**: ✅ Available
-**Location**: `sdks/java/`
-**Features**:
-- Complete Java SDK reference guide
-- Spring Boot integration guidance
-- Comprehensive samples catalog
-- Automated integration tests
+**Single Skill with SDK Resources:**
+- `temporal.md` - Main skill file with core Temporal concepts
+- `sdks/java/` - Java SDK resource with Spring Boot integration
+- `sdks/python/` - *(Coming soon)* Python SDK resource
+- `sdks/typescript/` - *(Coming soon)* TypeScript SDK resource
+- ...and more
+
+When you use the skill, Claude references the appropriate SDK resource based on your language.
 
 ## Quick Start
 
@@ -29,119 +29,158 @@ This repository contains **skill packages** for Claude Code - structured knowled
 
 **Option 1: Use the pre-built package**
 
-1. Download the latest skill package for your SDK from the releases
-2. Extract the skill file:
+1. Download the latest skill package from the releases
+2. Extract the contents:
    ```bash
-   # For Java SDK
-   unzip -j temporal-java-skill-latest.zip "*/temporal-java.md" -d ~/.claude/skills/
+   unzip temporal-skill-latest.zip
+   cd temporal-skill
    ```
-3. Start using Claude Code - it will automatically use the skill when you ask about Temporal
+3. Copy to your Claude skills directory:
+   ```bash
+   cp temporal.md ~/.claude/skills/
+   cp -r sdks ~/.claude/skills/
+   ```
+4. Start using Claude Code - reference the skill in your prompts
 
 **Option 2: Copy directly (for development)**
 
 ```bash
-# For Java SDK
-cp sdks/java/temporal-java.md ~/.claude/skills/
+# Copy the skill and SDK resources
+cp temporal.md ~/.claude/skills/
+cp -r sdks ~/.claude/skills/
 
 # Or if Claude Code is configured differently:
-cp sdks/java/temporal-java.md .claude/skills/
+cp temporal.md .claude/skills/
+cp -r sdks .claude/skills/
 ```
 
 ### For Claude Cloud Users
 
-1. Build the skill package for your SDK:
+1. Build the skill package:
    ```bash
-   # Build Java SDK
-   ./build-skill-package.sh --sdk java
-
-   # Or build all SDKs
-   ./build-skill-package.sh --all
+   ./build-skill-package.sh
    ```
 
 2. Upload the generated package to Claude Cloud:
    ```
-   dist/temporal-java-skill-latest.zip
+   dist/temporal-skill-latest.zip
    ```
 
 3. Activate the skill in your Cloud project
 
-## What the Skills Provide
+## Usage Examples
 
-When you ask Claude Code about Temporal with these skills installed, Claude can help you with:
+```
+You: "Create a Temporal workflow in Java that processes orders with retry logic"
 
+Claude: [Uses the temporal skill to understand the request, references the Java SDK
+         resource, fetches latest SDK version, generates proper workflow/activity
+         interfaces, implements retry policies, creates worker and client code]
+```
+
+```
+You: "How do I implement signals in Temporal?"
+
+Claude: [References temporal.md for signal concepts, then provides language-specific
+         examples from your SDK resource]
+```
+
+```
+You: "Set up a new Temporal project with Spring Boot"
+
+Claude: [References Java SDK resource's Spring Boot integration guide, provides
+         dependencies, configuration, and project structure]
+```
+
+## What the Skill Provides
+
+When you ask Claude about Temporal with this skill installed, Claude can help you with:
+
+- **SDK Selection**: Help you choose the right SDK for your project
 - **Getting Started**: Set up new Temporal projects with proper dependency configuration
 - **Core Concepts**: Understand workflows, activities, workers, and clients
-- **Framework Integration**: Choose and implement framework-specific patterns (e.g., Spring Boot)
+- **Framework Integration**: Implement framework-specific patterns (Spring Boot, etc.)
 - **Advanced Patterns**: Implement signals, queries, sagas, child workflows, and more
 - **Testing**: Write unit and integration tests for your workflows
 - **Best Practices**: Follow Temporal's recommended patterns and avoid common pitfalls
 - **Sample Discovery**: Find relevant examples from official samples repositories
 - **Latest Versions**: Automatically fetch and use the newest SDK versions
 
-## Example Usage
-
-```
-You: "Create a Temporal workflow that processes orders with retry logic"
-
-Claude: [Uses the skill to fetch latest SDK version, generates proper workflow/activity
-         interfaces, implements retry policies, creates worker and client code]
-```
-
-```
-You: "I need to add a signal to pause my workflow"
-
-Claude: [References the skill's signal documentation and relevant samples,
-         generates proper signal method implementation with handling]
-```
-
 ## Repository Structure
 
 ```
 .
+├── temporal.md                     # Main skill file
 ├── sdks/
-│   └── java/                       # Java SDK skill
-│       ├── temporal-java.md        # Main skill file
+│   └── java/                       # Java SDK resource
+│       ├── java.md                 # Java SDK guide
 │       ├── references/             # Additional references
-│       │   ├── samples.md          # Samples guide
+│       │   ├── samples.md          # Samples catalog
 │       │   └── spring-boot.md      # Spring Boot guide
 │       └── test/                   # Integration tests
 │           └── skill-integration/
-├── build-skill-package.sh          # Build script for all SDKs
-├── BUILD.md                        # Build system documentation
+├── build-skill-package.sh          # Build script
+├── BUILD.md                        # Build documentation
 └── README.md                       # This file
 ```
 
-## Building Skill Packages
+## Current SDK Resources
 
-The build system creates production-ready packages for Claude Cloud:
+### Java SDK
+**Status**: ✅ Complete
+**Location**: `sdks/java/java.md`
+**Features**:
+- Complete Java SDK reference guide
+- Maven/Gradle dependency management
+- Spring Boot integration patterns
+- Comprehensive samples catalog
+- Testing strategies
+
+### Python SDK
+**Status**: 🚧 Planned
+**Location**: `sdks/python/python.md` *(Coming soon)*
+
+### TypeScript SDK
+**Status**: 🚧 Planned
+**Location**: `sdks/typescript/typescript.md` *(Coming soon)*
+
+### Go SDK
+**Status**: 🚧 Planned
+**Location**: `sdks/go/go.md` *(Coming soon)*
+
+### .NET SDK
+**Status**: 🚧 Planned
+**Location**: `sdks/dotnet/dotnet.md` *(Coming soon)*
+
+### PHP SDK
+**Status**: 🚧 Planned
+**Location**: `sdks/php/php.md` *(Coming soon)*
+
+## Building the Skill Package
+
+The build system creates a single production-ready package:
 
 ```bash
-# List available SDKs
-./build-skill-package.sh --list
+# Build the skill package
+./build-skill-package.sh
 
-# Build a specific SDK
-./build-skill-package.sh --sdk java
-
-# Build all SDKs
-./build-skill-package.sh --all
-
-# Fast build without URL validation
-./build-skill-package.sh --sdk java --skip-url-check
+# Build without URL validation (faster)
+./build-skill-package.sh --skip-url-check
 ```
 
 **Output:**
 ```
 dist/
-├── temporal-java-skill-YYYYMMDD_HHMMSS.zip   # Timestamped package
-├── temporal-java-skill-latest.zip             # Symlink to latest
-└── build-report-java.txt                      # Build validation report
+├── temporal-skill-YYYYMMDD_HHMMSS.zip  # Timestamped package
+├── temporal-skill-latest.zip            # Symlink to latest
+└── build-report.txt                     # Build validation report
 ```
 
 See [BUILD.md](BUILD.md) for detailed build documentation.
 
 ## Testing
 
-Each SDK includes a comprehensive integration test suite that validates the skill works end-to-end.
+The Java SDK includes a comprehensive integration test suite that validates the skill works end-to-end.
 
 ### Java SDK Integration Tests
 
@@ -162,32 +201,32 @@ cd sdks/java/test/skill-integration
 ### What the Tests Do
 
 The integration tests:
-1. Install the skill in a test workspace
+1. Install the skill (temporal.md + sdks/) in a test workspace
 2. Use the Claude API to generate a complete Temporal application
 3. Validate the generated code structure
-4. Compile the project with language-specific build tools
+4. Compile the project with Maven
 5. Optionally run the application with Temporal server
 
 This proves the skill works correctly and generates production-ready code.
 
-See SDK-specific test documentation for details:
-- Java: [sdks/java/test/skill-integration/README.md](sdks/java/test/skill-integration/README.md)
+See [sdks/java/test/skill-integration/README.md](sdks/java/test/skill-integration/README.md) for detailed test documentation.
 
 ## How It Works
 
 ### Skill Architecture
 
-The skills use a **documentation-first approach**:
+The skill uses a **unified architecture with SDK resources**:
 
-1. **Curated References**: Points to official Temporal docs rather than duplicating content
-2. **Latest Versions**: Fetches current SDK versions from package repositories
-3. **Sample Mapping**: Maps use cases to relevant examples in official samples repositories
-4. **Decision Guidance**: Helps choose between different SDK approaches and frameworks
-5. **Pattern Library**: Provides common patterns and best practices
+1. **Main Skill**: `temporal.md` provides core Temporal concepts and SDK selection
+2. **SDK Resources**: Language-specific guides in `sdks/<language>/<language>.md`
+3. **Documentation-First**: Points to official Temporal docs rather than duplicating content
+4. **Latest Versions**: Fetches current SDK versions from package repositories
+5. **Sample Mapping**: Maps use cases to relevant examples in official samples repositories
+6. **Pattern Library**: Provides common patterns and best practices
 
 ### Framework Intelligence
 
-Skills include smart framework detection and guidance. For example, the Java skill:
+SDK resources include smart framework detection and guidance. For example, the Java SDK resource:
 
 - Asks if you want Spring Boot integration before proceeding
 - Uses appropriate dependencies and annotations for the chosen framework
@@ -196,60 +235,58 @@ Skills include smart framework detection and guidance. For example, the Java ski
 
 ## Development
 
-### Adding a New SDK
+### Adding a New SDK Resource
 
 To add support for a new Temporal SDK:
 
-1. Create a new directory under `sdks/`:
+1. Create SDK directory:
    ```bash
-   mkdir -p sdks/python
+   mkdir -p sdks/newsdk
    ```
 
-2. Create the skill file following naming convention:
+2. Create the SDK resource file:
    ```bash
-   touch sdks/python/temporal-python.md
+   # File should be named <sdk>.md
+   touch sdks/newsdk/newsdk.md
    ```
 
-3. Add references directory if needed:
+3. (Optional) Add SDK-specific references:
    ```bash
-   mkdir -p sdks/python/references
+   mkdir -p sdks/newsdk/references
    ```
 
-4. Create integration tests:
-   ```bash
-   mkdir -p sdks/python/test/skill-integration
-   ```
+4. Update `temporal.md` to mention the new SDK
 
 5. Build and test:
    ```bash
-   ./build-skill-package.sh --sdk python
+   ./build-skill-package.sh
    ```
 
-### Modifying an Existing Skill
+### Modifying the Skill
 
-1. Edit the skill file (e.g., `sdks/java/temporal-java.md`)
-2. Update references if needed
-3. Run tests to validate:
+1. Edit `temporal.md` for core Temporal concepts
+2. Edit SDK resources in `sdks/<language>/` for language-specific content
+3. Run tests to validate (for Java SDK):
    ```bash
    cd sdks/java/test/skill-integration
    ./run-integration-test.sh
    ```
 4. Build the package:
    ```bash
-   ./build-skill-package.sh --sdk java
+   ./build-skill-package.sh
    ```
 
 ### Best Practices
 
 - **Keep URLs Current**: Validate all documentation links regularly
-- **Test All Variations**: Run integration tests for all SDK variants
+- **Test SDK Variations**: Run integration tests for SDK-specific features
 - **Version Awareness**: Ensure package repository links work correctly
 - **Sample Updates**: Keep sample references in sync with official repositories
-- **Cross-SDK Consistency**: Maintain similar structure across SDK skills
+- **Cross-SDK Consistency**: Maintain similar structure across SDK resources
 
 ## Requirements
 
-### For Using the Skills
+### For Using the Skill
 - Claude Code installed and configured
 - Basic understanding of Temporal concepts
 
@@ -257,41 +294,42 @@ To add support for a new Temporal SDK:
 - Bash shell
 - `curl` or `wget` for URL validation
 
-### For Testing
+### For Testing (Java SDK)
 - Anthropic API key (for automated tests)
 - Python 3 with `anthropic` package
-- SDK-specific requirements (e.g., Java 11+ and Maven for Java SDK)
+- Java 11+ and Maven
 - Temporal CLI (optional, for execution tests)
 
 ## Contributing
 
 Contributions are welcome! Areas for improvement:
 
-- **New SDKs**: Add skills for TypeScript, Python, Go, .NET, PHP
-- **Additional Patterns**: Add more advanced Temporal patterns
+- **New SDK Resources**: Add resources for Python, TypeScript, Go, .NET, PHP
+- **Additional Patterns**: Add more advanced Temporal patterns to SDK resources
 - **Sample Mapping**: Improve use-case to sample mapping
 - **Framework Examples**: Expand framework integration guidance
-- **Test Coverage**: Add more test scenarios
+- **Test Coverage**: Add more test scenarios for existing SDKs
 - **Documentation**: Keep references current with Temporal updates
 
 ### Contribution Workflow
 
 1. Fork the repository
 2. Create a new branch for your changes
-3. Make your changes to SDK skill files or add new SDKs
-4. Run the integration tests
-5. Build and validate the packages
+3. Add/modify skill content or SDK resources
+4. Run the integration tests (if applicable)
+5. Build and validate the package
 6. Submit a pull request
 
 ## Support
 
 ### For Skill Content
-- Edit SDK-specific files in `sdks/<sdk-name>/`
+- Main skill: Edit `temporal.md`
+- SDK-specific: Edit `sdks/<sdk>/<sdk>.md`
 - Check official Temporal docs: https://docs.temporal.io/
 
 ### For Build Issues
 - See [BUILD.md](BUILD.md)
-- Check `dist/build-report-<sdk>.txt` for details
+- Check `dist/build-report.txt` for details
 
 ### For Test Issues
 - See SDK-specific test documentation
@@ -300,6 +338,7 @@ Contributions are welcome! Areas for improvement:
 ### For Temporal Questions
 - Community forum: https://community.temporal.io/
 - GitHub: https://github.com/temporalio/
+- Slack: https://temporal.io/slack
 
 ## Resources
 
@@ -307,6 +346,7 @@ Contributions are welcome! Areas for improvement:
 - **SDK Guides**: https://docs.temporal.io/develop/
 - **Samples Repositories**: https://github.com/temporalio/samples-java (and others)
 - **Community**: https://community.temporal.io/
+- **Temporal Learn**: https://learn.temporal.io/
 
 ## License
 
@@ -316,4 +356,4 @@ This skill package references official Temporal documentation and samples. Pleas
 
 Current version: 1.0.0
 
-Check SDK-specific build reports after building for package details.
+Check `dist/build-report.txt` after building for package details.

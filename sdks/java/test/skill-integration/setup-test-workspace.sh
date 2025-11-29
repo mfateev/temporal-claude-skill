@@ -11,7 +11,8 @@ echo -e "${YELLOW}=== Setting up Temporal Java Skill Test Workspace ===${NC}\n"
 
 # Get the directory where this script is located
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-SKILL_FILE="$SCRIPT_DIR/../../temporal-java.md"
+SKILL_FILE="$SCRIPT_DIR/../../../../../temporal.md"
+SDK_DIR="$SCRIPT_DIR/../../"
 WORKSPACE_DIR="$SCRIPT_DIR/test-workspace"
 
 # Clean up old workspace if it exists
@@ -25,16 +26,13 @@ echo -e "${YELLOW}Creating test workspace at: ${WORKSPACE_DIR}${NC}"
 mkdir -p "$WORKSPACE_DIR/.claude/skills"
 mkdir -p "$WORKSPACE_DIR/src"
 
-# Copy the skill file to the workspace
-echo -e "${YELLOW}Installing temporal-java.md skill...${NC}"
+# Copy the main skill file
+echo -e "${YELLOW}Installing temporal.md skill...${NC}"
 cp "$SKILL_FILE" "$WORKSPACE_DIR/.claude/skills/"
 
-# Copy references directory if it exists
-REFERENCES_DIR="$(dirname "$SKILL_FILE")/references"
-if [ -d "$REFERENCES_DIR" ]; then
-    echo -e "${YELLOW}Installing references directory...${NC}"
-    cp -r "$REFERENCES_DIR" "$WORKSPACE_DIR/.claude/skills/"
-fi
+# Copy SDK resources
+echo -e "${YELLOW}Installing SDK resources...${NC}"
+cp -r "$(dirname "$SDK_DIR")/sdks" "$WORKSPACE_DIR/.claude/skills/"
 
 # Create a .claude/settings.json for the workspace
 cat > "$WORKSPACE_DIR/.claude/settings.json" <<'EOF'
@@ -48,7 +46,7 @@ EOF
 cat > "$WORKSPACE_DIR/test-prompt.txt" <<'EOF'
 Create a Temporal workflow that executes two activities. After the first activity the workflow awaits a signal. When the signal is received it executes the second activity.
 
-Use the temporal-java skill.
+Use the temporal skill with Java SDK.
 
 Requirements:
 - Create a workflow with a signal method

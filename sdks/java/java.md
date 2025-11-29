@@ -1,6 +1,6 @@
-# Temporal.io Java SDK Reference Guide
+# Java SDK Resource
 
-This skill provides guidance on working with Temporal.io using the Java SDK by pointing you to official documentation and key APIs.
+This resource provides guidance on working with Temporal.io using the Java SDK by pointing you to official documentation and key APIs.
 
 ## Official Documentation
 

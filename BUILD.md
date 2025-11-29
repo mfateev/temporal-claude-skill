@@ -1,83 +1,66 @@
-# Building Skill Packages
+# Building the Temporal Skill Package
 
-This repository contains a build system for packaging Temporal skills across multiple SDKs for Claude Cloud upload.
+This repository contains a build system for packaging a single Temporal skill with multiple SDK resources for Claude Cloud upload.
 
 ## Quick Start
 
 ```bash
-# List available SDKs
-./build-skill-package.sh --list
-
-# Build a specific SDK (default: java)
-./build-skill-package.sh --sdk java
-
-# Build all SDKs
-./build-skill-package.sh --all
+# Build the skill package
+./build-skill-package.sh
 
 # Build without URL validation (faster)
-./build-skill-package.sh --sdk java --skip-url-check
-```
-
-## Available Commands
-
-```bash
-./build-skill-package.sh [OPTIONS]
-
-Options:
-  --sdk <name>        Build specific SDK (e.g., --sdk java)
-  --all               Build all available SDKs
-  --list              List available SDKs
-  --skip-url-check    Skip URL validation (faster builds)
-  --help, -h          Show help message
+./build-skill-package.sh --skip-url-check
 ```
 
 ## What Gets Created
 
-The build process creates SDK-specific packages:
+The build process creates a single skill package with all SDK resources:
 
 ```
 dist/
-├── temporal-java-skill-YYYYMMDD_HHMMSS.zip   # Timestamped Java package
-├── temporal-java-skill-latest.zip             # Symlink to latest Java
-├── build-report-java.txt                      # Java build report
-├── temporal-python-skill-YYYYMMDD_HHMMSS.zip # (future SDK packages)
-└── ...
+├── temporal-skill-YYYYMMDD_HHMMSS.zip   # Timestamped package
+├── temporal-skill-latest.zip             # Symlink to latest
+└── build-report.txt                      # Build validation report
 ```
 
 ## Package Contents
 
-Each skill package includes:
+The skill package includes:
 
-- **temporal-<sdk>.md** - The main skill file
-- **references/** - Additional reference documentation (if available)
+- **temporal.md** - Main skill file with core Temporal concepts
+- **sdks/** - SDK-specific resources
+  - **java/java.md** - Java SDK resource
+  - **java/references/** - Java-specific guides
+  - *(Future SDKs will be added here)*
 - **skill-metadata.json** - Metadata for Cloud skill management
 - **README.md** - Installation and usage instructions
 
 ## Package Structure
 
-Example for Java SDK:
-
 ```
-temporal-java-skill/
-├── temporal-java.md           # Main skill file
-├── references/
-│   ├── samples.md             # Samples reference
-│   └── spring-boot.md         # Spring Boot guide
-├── skill-metadata.json        # Metadata (auto-generated)
-└── README.md                  # Package documentation
+temporal-skill/
+├── temporal.md           # Main skill file
+├── sdks/
+│   └── java/
+│       ├── java.md       # Java SDK resource
+│       └── references/
+│           ├── samples.md
+│           └── spring-boot.md
+├── skill-metadata.json   # Metadata (auto-generated)
+└── README.md             # Package documentation
 ```
 
 ## Build Process
 
-The build script performs these steps for each SDK:
+The build script performs these steps:
 
-1. **SDK Discovery** - Finds available SDKs in `sdks/` directory
-2. **Validation** - Checks skill file format and content
-3. **Structure Creation** - Creates proper package directory layout
+1. **Validation** - Checks skill file format and content
+2. **Structure Creation** - Creates proper package directory layout
+3. **SDK Resources Copy** - Includes all SDK resources from `sdks/`
 4. **Metadata Generation** - Extracts metadata from skill file
 5. **URL Validation** - Verifies all links are accessible (optional)
-6. **Packaging** - Creates timestamped zip file with symlink to latest
-7. **Report Generation** - Creates detailed build report per SDK
+6. **Packaging** - Creates timestamped zip file
+7. **Report Generation** - Creates detailed build report
 
 ## Validation
 
@@ -85,7 +68,6 @@ The build script performs these steps for each SDK:
 - File exists and is not empty
 - Contains markdown headers
 - Contains documentation URLs
-- Named correctly (`temporal-<sdk>.md`)
 
 ### URL Validation
 - Tests all URLs in all markdown files
@@ -93,32 +75,101 @@ The build script performs these steps for each SDK:
 - Reports any broken links
 - Can be skipped with `--skip-url-check`
 
-## SDK Organization
+## Usage
 
-SDKs are organized under the `sdks/` directory:
+### Build the Package
 
-```
-sdks/
-├── java/
-│   ├── temporal-java.md       # Main skill file (required)
-│   ├── references/            # Additional docs (optional)
-│   └── test/                  # Integration tests (optional)
-├── python/                    # (future SDK)
-├── typescript/                # (future SDK)
-└── go/                        # (future SDK)
+```bash
+./build-skill-package.sh
 ```
 
-### Adding a New SDK
+Output:
+```
+╔════════════════════════════════════════════════╗
+║  Temporal Skill Package Builder               ║
+╚════════════════════════════════════════════════╝
+
+[15:07:11] Cleaning build directories...
+✓ Build directories cleaned
+[15:07:11] Validating skill file: temporal.md
+✓ Skill file validated (8218 bytes)
+[15:07:11] Creating package structure...
+✓ Copied main skill file
+✓ Copied SDK resources
+✓ Included 1 SDK resource(s)
+✓ Generated metadata file
+✓ Created package README
+✓ Package structure created
+[15:07:11] Validating URLs in skill package...
+  ✓ [200] https://docs.temporal.io/
+  ...
+✓ All 45 URLs validated successfully
+[15:07:15] Creating zip package...
+✓ Created zip package: temporal-skill-20251129_150711.zip (120K)
+
+╔════════════════════════════════════════════════╗
+║       BUILD COMPLETED SUCCESSFULLY!            ║
+╚════════════════════════════════════════════════╝
+
+Next steps:
+  • Upload to Cloud: dist/temporal-skill-latest.zip
+  • View report: dist/build-report.txt
+  • Test locally: Copy temporal.md and sdks/ to .claude/skills/
+```
+
+### Fast Build for Development
+
+```bash
+./build-skill-package.sh --skip-url-check
+```
+
+Skips URL validation for faster iteration during development.
+
+## For Claude Cloud
+
+1. Build the package:
+   ```bash
+   ./build-skill-package.sh
+   ```
+
+2. Upload to Claude Cloud:
+   ```
+   dist/temporal-skill-latest.zip
+   ```
+
+3. Activate in your Cloud project
+
+## For Local Claude Code
+
+Extract and copy to your skills directory:
+
+```bash
+# Extract the package
+unzip dist/temporal-skill-latest.zip
+cd temporal-skill
+
+# Copy to Claude Code skills directory
+cp temporal.md ~/.claude/skills/
+cp -r sdks ~/.claude/skills/
+
+# Or copy directly from source (for development)
+cp temporal.md ~/.claude/skills/
+cp -r sdks ~/.claude/skills/
+```
+
+## Adding New SDK Resources
+
+To add a new SDK resource:
 
 1. Create SDK directory:
    ```bash
    mkdir -p sdks/newsdk
    ```
 
-2. Create the skill file:
+2. Create the resource file:
    ```bash
-   # File must be named temporal-<sdk>.md
-   touch sdks/newsdk/temporal-newsdk.md
+   # Must be named <sdk>.md
+   touch sdks/newsdk/newsdk.md
    ```
 
 3. (Optional) Add references:
@@ -126,99 +177,14 @@ sdks/
    mkdir -p sdks/newsdk/references
    ```
 
-4. Build it:
+4. Update `temporal.md` to mention the new SDK
+
+5. Build:
    ```bash
-   ./build-skill-package.sh --sdk newsdk
+   ./build-skill-package.sh
    ```
 
-## Usage Examples
-
-### Build Java SDK Only
-
-```bash
-./build-skill-package.sh --sdk java
-```
-
-Output:
-```
-╔════════════════════════════════════════════════╗
-║  Building: temporal-java-skill                 ║
-╚════════════════════════════════════════════════╝
-
-[14:30:45] Cleaning build directories...
-✓ Build directories cleaned
-[14:30:45] Validating skill file: temporal-java.md
-✓ Skill file validated (15234 bytes)
-[14:30:45] Creating package structure for java...
-✓ Copied skill file: temporal-java.md
-✓ Copied references directory
-✓ Generated metadata file
-✓ Created package README
-✓ Package structure created for java
-[14:30:45] Validating URLs in skill package...
-  ✓ [200] https://docs.temporal.io/
-  ✓ [200] https://docs.temporal.io/dev-guide/java
-  ...
-✓ All 25 URLs validated successfully
-[14:30:52] Creating zip package...
-✓ Created zip package: temporal-java-skill-20251129_143052.zip (45K)
-
-╔════════════════════════════════════════════════╗
-║       BUILD COMPLETED SUCCESSFULLY!            ║
-╚════════════════════════════════════════════════╝
-
-Next steps:
-  • Upload to Cloud: dist/temporal-java-skill-latest.zip
-  • View report: dist/build-report-java.txt
-  • Test locally: Copy temporal-java.md to .claude/skills/
-```
-
-### Build All SDKs
-
-```bash
-./build-skill-package.sh --all
-```
-
-This will:
-1. Discover all SDKs in `sdks/` directory
-2. Build each SDK sequentially
-3. Create separate packages and reports for each
-4. Continue even if one SDK fails
-
-### Fast Build for Development
-
-```bash
-./build-skill-package.sh --sdk java --skip-url-check
-```
-
-Skips URL validation for faster iteration during development.
-
-## Usage for Different Platforms
-
-### For Claude Cloud
-
-1. Build the package:
-   ```bash
-   ./build-skill-package.sh --sdk java
-   ```
-
-2. Upload the generated zip file to Claude Cloud:
-   ```
-   dist/temporal-java-skill-latest.zip
-   ```
-
-3. Activate the skill in your Cloud project
-
-### For Local Claude Code
-
-Extract the skill file from the package:
-```bash
-# Extract just the skill file
-unzip -j dist/temporal-java-skill-latest.zip "*/temporal-java.md" -d ~/.claude/skills/
-
-# Or copy directly from source (for development)
-cp sdks/java/temporal-java.md ~/.claude/skills/
-```
+The build system automatically includes all SDKs in the `sdks/` directory.
 
 ## Build Artifacts
 
@@ -235,19 +201,10 @@ See `.gitignore` for details.
 Some URLs may be temporarily unavailable. Options:
 - Wait and retry
 - Use `--skip-url-check` to skip validation
-- Fix broken URLs in the skill file
+- Fix broken URLs in the skill or SDK resource files
 
-### "No skill file found in sdks/xxx"
-Ensure the skill file follows naming convention:
-- Must be named `temporal-<sdk>.md`
-- Must be in the root of the SDK directory
-- Example: `sdks/java/temporal-java.md`
-
-### "SDK not found"
-Check that:
-- SDK directory exists under `sdks/`
-- Directory name matches `--sdk` parameter
-- Use `--list` to see available SDKs
+### "Skill file not found"
+Ensure `temporal.md` exists in the repository root.
 
 ### Permission denied
 Make the script executable:
@@ -255,111 +212,18 @@ Make the script executable:
 chmod +x build-skill-package.sh
 ```
 
-## CI/CD Integration
-
-Example GitHub Actions workflow for building all SDKs:
-
-```yaml
-name: Build Skill Packages
-
-on:
-  push:
-    branches: [ main ]
-    paths: [ 'sdks/**/*.md' ]
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Build all skill packages
-        run: ./build-skill-package.sh --all
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v3
-        with:
-          name: skill-packages
-          path: dist/*.zip
-
-      - name: Upload to release
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v1
-        with:
-          files: dist/*-latest.zip
-```
-
-Example for building specific SDK on changes:
-
-```yaml
-name: Build Java Skill
-
-on:
-  push:
-    paths: [ 'sdks/java/**' ]
-
-jobs:
-  build-java:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Build Java skill package
-        run: ./build-skill-package.sh --sdk java
-
-      - name: Run integration tests
-        run: |
-          cd sdks/java/test/skill-integration
-          ./run-integration-test.sh
-        env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-```
-
-## Version Management
-
-Package versions are tracked in `skill-metadata.json`:
-
-```json
-{
-  "name": "temporal-java",
-  "version": "1.0.0",
-  "created": "2025-11-29T21:24:10Z"
-}
-```
-
-To update versions:
-1. Edit the version in `build-skill-package.sh` (search for `"version":`)
-2. Rebuild the packages
-3. Tag the release: `git tag -a v1.1.0 -m "Release 1.1.0"`
-
 ## Testing Built Packages
-
-After building, validate the packages:
 
 ### 1. Structure Test
 
 Verify zip contents:
 ```bash
-unzip -l dist/temporal-java-skill-latest.zip
-```
-
-Expected output:
-```
-Archive:  dist/temporal-java-skill-latest.zip
-  Length      Date    Time    Name
----------  ---------- -----   ----
-    15234  2025-11-29 14:30   temporal-java-skill/temporal-java.md
-     8432  2025-11-29 14:30   temporal-java-skill/references/samples.md
-     5672  2025-11-29 14:30   temporal-java-skill/references/spring-boot.md
-      543  2025-11-29 14:30   temporal-java-skill/skill-metadata.json
-     1234  2025-11-29 14:30   temporal-java-skill/README.md
----------                     -------
-    31115                     5 files
+unzip -l dist/temporal-skill-latest.zip
 ```
 
 ### 2. Integration Test
 
-Use the automated test suite:
+Use the automated test suite (Java SDK):
 ```bash
 cd sdks/java/test/skill-integration
 ./run-integration-test.sh
@@ -367,46 +231,44 @@ cd sdks/java/test/skill-integration
 
 ### 3. Manual Test
 
-Extract and use locally:
 ```bash
 # Extract to test location
-unzip -j dist/temporal-java-skill-latest.zip "*/temporal-java.md" -d test-dir/.claude/skills/
+unzip dist/temporal-skill-latest.zip
+cd temporal-skill
+
+# Copy to test Claude Code installation
+cp temporal.md test-dir/.claude/skills/
+cp -r sdks test-dir/.claude/skills/
 
 # Test with Claude Code
 cd test-dir
 # Ask Claude to create a Temporal application
 ```
 
-## Best Practices
-
-1. **Always validate URLs** before uploading to Cloud (skip only for dev)
-2. **Test the package** with integration test suite after building
-3. **Review the build report** for any warnings or issues
-4. **Version your releases** with git tags for traceability
-5. **Keep metadata accurate** (update version numbers appropriately)
-6. **Build all SDKs** before major releases to ensure consistency
-7. **Use --list** to verify SDK discovery before building
-
 ## Build Report
 
-Each build generates a detailed report in `dist/build-report-<sdk>.txt` containing:
+Each build generates a detailed report in `dist/build-report.txt` containing:
 
 - Build timestamp and package details
-- List of all files included in package
+- List of all files included
 - Package size and location
-- Skill metadata (parsed from JSON)
-- Installation instructions for Cloud and local use
+- Skill metadata
+- SDK resources included
+- Installation instructions
 
-Review this report to ensure:
-- All expected files are included
-- URLs were validated (if not skipped)
-- Metadata is correct
-- Package size is reasonable
+## Best Practices
+
+1. **Always validate URLs** before uploading to Cloud
+2. **Test the package** with integration test suite
+3. **Review the build report** for any warnings
+4. **Version your releases** with git tags
+5. **Keep metadata accurate** in skill files
+6. **Test SDK resources** individually
 
 ## Support
 
 For issues with:
-- **Skill content**: Edit `sdks/<sdk>/temporal-<sdk>.md`
+- **Skill content**: Edit `temporal.md` or `sdks/<sdk>/<sdk>.md`
 - **Build process**: Check this BUILD.md or the build script
 - **Package format**: Review Cloud skill documentation
 - **Integration tests**: See `sdks/<sdk>/test/skill-integration/README.md`
