@@ -19,68 +19,85 @@ echo -e "${YELLOW}[1/4] Setting up test workspace...${NC}"
 ./setup-test-workspace.sh
 echo -e "${GREEN}✓ Workspace ready${NC}\n"
 
-# Step 2: Check if Claude Code is available
-echo -e "${YELLOW}[2/4] Checking for Claude Code...${NC}"
+# Step 2: Check if API key is available
+echo -e "${YELLOW}[2/5] Checking for Anthropic API key...${NC}"
 
 WORKSPACE_DIR="$SCRIPT_DIR/test-workspace"
 
-# Check if we're already in a Claude Code session
-if [ -n "$CLAUDE_SESSION" ] || [ -n "$ANTHROPIC_API_KEY" ]; then
-    echo -e "${GREEN}✓ Running in Claude Code environment${NC}\n"
-    CLAUDE_AVAILABLE=true
+if [ -n "$ANTHROPIC_API_KEY" ]; then
+    echo -e "${GREEN}✓ Found ANTHROPIC_API_KEY${NC}\n"
+    AUTOMATED=true
 else
-    # Try to find claude command
-    if command -v claude &> /dev/null; then
-        echo -e "${GREEN}✓ Claude CLI found${NC}\n"
-        CLAUDE_AVAILABLE=true
-    else
-        echo -e "${YELLOW}! Claude Code CLI not found${NC}"
-        echo -e "${YELLOW}! This test requires manual interaction with Claude Code${NC}\n"
-        CLAUDE_AVAILABLE=false
-    fi
+    echo -e "${YELLOW}! ANTHROPIC_API_KEY not set${NC}"
+    echo -e "${YELLOW}! Falling back to manual testing mode${NC}\n"
+    AUTOMATED=false
 fi
 
-if [ "$CLAUDE_AVAILABLE" = false ]; then
+if [ "$AUTOMATED" = false ]; then
     echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     echo -e "${YELLOW}Manual Test Instructions:${NC}"
     echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}\n"
     echo -e "1. Open the test workspace in Claude Code:"
     echo -e "   ${YELLOW}cd $WORKSPACE_DIR${NC}"
-    echo -e "   ${YELLOW}claude-code .${NC}  (or open in your IDE with Claude Code)\n"
+    echo -e "   ${YELLOW}code .${NC}  (or open in your IDE with Claude Code)\n"
     echo -e "2. In Claude Code, send this prompt:"
     echo -e "   ${YELLOW}cat test-prompt.txt${NC} and send the content to Claude\n"
     echo -e "3. After Claude generates the code, validate it:"
     echo -e "   ${YELLOW}./validate.sh${NC}\n"
     echo -e "4. If validation passes, the test is successful!\n"
     echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}\n"
+    echo -e "Or set ANTHROPIC_API_KEY for automated testing:"
+    echo -e "   ${YELLOW}export ANTHROPIC_API_KEY='your-key-here'${NC}"
+    echo -e "   ${YELLOW}./run-integration-test.sh${NC}\n"
 
     echo -e "Test workspace is ready at: ${GREEN}$WORKSPACE_DIR${NC}"
     exit 0
 fi
 
-# Step 3: Generate application using Claude Code (if available)
-echo -e "${YELLOW}[3/4] Generating application with Claude Code...${NC}"
+# Step 3: Check for Python and anthropic package
+echo -e "${YELLOW}[3/5] Checking Python environment...${NC}"
+
+if ! command -v python3 &> /dev/null; then
+    echo -e "${RED}✗ Python 3 not found${NC}"
+    echo -e "Please install Python 3 or use manual testing mode"
+    exit 1
+fi
+
+echo -e "${GREEN}✓ Python 3 found${NC}"
+
+# Check if anthropic package is installed
+if ! python3 -c "import anthropic" 2>/dev/null; then
+    echo -e "${YELLOW}Installing anthropic package...${NC}"
+    pip3 install anthropic || pip3 install --user anthropic
+fi
+
+echo -e "${GREEN}✓ anthropic package available${NC}\n"
+
+# Step 4: Generate application using API
+echo -e "${YELLOW}[4/5] Generating application with Claude API...${NC}"
+echo -e "${YELLOW}This will use the Anthropic API to invoke Claude with the skill${NC}\n"
+
+cd "$SCRIPT_DIR"
+python3 automate_test.py
+
+if [ $? -ne 0 ]; then
+    echo -e "\n${RED}✗ Code generation failed${NC}"
+    exit 1
+fi
+
+# Step 5: Validate
+echo -e "\n${YELLOW}[5/5] Validating generated application...${NC}"
 
 cd "$WORKSPACE_DIR"
+./validate.sh
 
-# Read the prompt
-PROMPT=$(cat test-prompt.txt)
-
-# Try to invoke Claude Code
-# Note: This is a placeholder - actual implementation depends on Claude Code CLI interface
-echo -e "${YELLOW}Invoking Claude Code...${NC}"
-echo -e "${YELLOW}(This step requires Claude Code CLI with API access)${NC}\n"
-
-# If you have Claude Code CLI, you could do something like:
-# claude-code --workspace . --prompt "$PROMPT" --output generated-app
-
-echo -e "${RED}Automated invocation not yet implemented.${NC}"
-echo -e "${YELLOW}Please manually run Claude Code in the workspace directory.${NC}\n"
-
-# Step 4: Validate (will be manual for now)
-echo -e "${YELLOW}[4/4] After Claude generates the code, run:${NC}"
-echo -e "   cd $WORKSPACE_DIR"
-echo -e "   ./validate.sh"
-echo -e ""
-
-exit 0
+if [ $? -eq 0 ]; then
+    echo -e "\n${GREEN}╔════════════════════════════════════════════════╗${NC}"
+    echo -e "${GREEN}║       INTEGRATION TEST PASSED!                 ║${NC}"
+    echo -e "${GREEN}╚════════════════════════════════════════════════╝${NC}\n"
+else
+    echo -e "\n${RED}╔════════════════════════════════════════════════╗${NC}"
+    echo -e "${RED}║       INTEGRATION TEST FAILED                  ║${NC}"
+    echo -e "${RED}╚════════════════════════════════════════════════╝${NC}\n"
+    exit 1
+fi

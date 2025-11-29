@@ -47,7 +47,12 @@ test-workspace/
 
 ## Prerequisites
 
-### Required
+### For Automated Testing
+- **Anthropic API Key** - Set as `ANTHROPIC_API_KEY` environment variable
+- **Python 3** with `anthropic` package (auto-installed if missing)
+- **Java 11+** and **Maven** (for validation and building)
+
+### For Manual Testing
 - **Claude Code** installed and configured
 - **Java 11+** and **Maven** (for validation and building)
 
@@ -57,20 +62,48 @@ test-workspace/
   docker run -p 7233:7233 -p 8233:8233 temporalio/auto-setup:latest
   ```
 
+## How Automation Works
+
+The automated test uses the **Anthropic API** to:
+
+1. **Load the skill** - Reads `temporal-java.md`
+2. **Send to Claude** - Invokes Claude API with the skill as system context
+3. **Extract code** - Parses Claude's response to extract code blocks
+4. **Write files** - Creates the project structure with generated code
+5. **Validate** - Runs compilation and structure checks
+
+The automation script (`automate_test.py`):
+- Uses the Anthropic Python SDK
+- Sends the skill as system context
+- Processes Claude's response to extract Java/XML files
+- Handles both explicit file paths and inferred structure
+- Saves raw response for debugging
+
 ## Running the Test
 
-### Option 1: Automated Test (Recommended)
+### Option 1: Fully Automated Test (Recommended)
 
+**With API key:**
 ```bash
+export ANTHROPIC_API_KEY='your-api-key-here'
 cd test/skill-integration
 ./run-integration-test.sh
 ```
 
 This will:
 1. Set up the test workspace
-2. Check if Claude Code is available
-3. Provide instructions for using Claude Code
-4. Validate the generated application
+2. Use the Anthropic API to invoke Claude with the skill
+3. Generate the complete application automatically
+4. Validate the generated code
+5. Report success or failure
+
+**Without API key:**
+```bash
+cd test/skill-integration
+./run-integration-test.sh
+```
+
+Will provide manual testing instructions.
 
 ### Option 2: Manual Step-by-Step
 
@@ -213,11 +246,30 @@ You can now test the application:
 
 ## Troubleshooting
 
-### "Claude Code not found"
+### "ANTHROPIC_API_KEY environment variable not set"
+- Get your API key from https://console.anthropic.com/
+- Set it: `export ANTHROPIC_API_KEY='your-key'`
+- Or use manual testing mode without API key
+
+### "anthropic package not found"
+The script will try to auto-install, but you can manually install:
+```bash
+pip3 install anthropic
+# or
+pip3 install --user anthropic
+```
+
+### "No files extracted with primary method"
+The script will try fallback extraction. If that fails:
+- Check `test-workspace/claude-response.txt` to see Claude's raw response
+- Claude may not have followed the expected format
+- Try adjusting the prompt in `setup-test-workspace.sh`
+
+### "Claude Code not found" (manual mode)
 - Install Claude Code CLI
 - Or manually open the workspace in your IDE with Claude Code plugin
 
-### "Skill not being used"
+### "Skill not being used" (manual mode)
 - Verify skill file is in `.claude/skills/temporal-java.md`
 - Check skill file format (must be valid markdown)
 - Try mentioning the skill explicitly in your prompt
