@@ -95,7 +95,8 @@ extract_metadata() {
   \"created\": \"$(date -u +"%Y-%m-%dT%H:%M:%SZ")\",
   \"format\": \"cloud-skill-v1\",
   \"files\": [
-    \"temporal-java.md\"
+    \"temporal-java.md\",
+    \"references/spring-boot.md\"
   ]
 }"
 }
@@ -110,6 +111,12 @@ create_package_structure() {
     # Copy skill file
     cp "${SCRIPT_DIR}/temporal-java.md" "${pkg_dir}/"
     print_success "Copied skill file"
+
+    # Copy references directory
+    if [ -d "${SCRIPT_DIR}/references" ]; then
+        cp -r "${SCRIPT_DIR}/references" "${pkg_dir}/"
+        print_success "Copied references directory"
+    fi
 
     # Generate metadata
     extract_metadata "${SCRIPT_DIR}/temporal-java.md" > "${pkg_dir}/skill-metadata.json"
@@ -147,6 +154,8 @@ The skill will guide Claude to:
 ## Skill Contents
 
 - **temporal-java.md**: Main skill file with documentation references
+- **references/**: Additional reference documentation
+  - **spring-boot.md**: Comprehensive Spring Boot integration guide
 - **skill-metadata.json**: Metadata for Cloud skill management
 - **README.md**: This file
 

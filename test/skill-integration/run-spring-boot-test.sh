@@ -42,6 +42,11 @@ setup_workspace() {
     # Copy skill
     cp "${SCRIPT_DIR}/../../temporal-java.md" "${WORKSPACE_DIR}/.claude/skills/"
 
+    # Copy references directory
+    if [ -d "${SCRIPT_DIR}/../../references" ]; then
+        cp -r "${SCRIPT_DIR}/../../references" "${WORKSPACE_DIR}/.claude/skills/"
+    fi
+
     # Copy Spring Boot prompt
     cp "${SCRIPT_DIR}/test-spring-boot-prompt.txt" "${WORKSPACE_DIR}/test-prompt.txt"
 

@@ -29,6 +29,13 @@ mkdir -p "$WORKSPACE_DIR/src"
 echo -e "${YELLOW}Installing temporal-java.md skill...${NC}"
 cp "$SKILL_FILE" "$WORKSPACE_DIR/.claude/skills/"
 
+# Copy references directory if it exists
+REFERENCES_DIR="$(dirname "$SKILL_FILE")/references"
+if [ -d "$REFERENCES_DIR" ]; then
+    echo -e "${YELLOW}Installing references directory...${NC}"
+    cp -r "$REFERENCES_DIR" "$WORKSPACE_DIR/.claude/skills/"
+fi
+
 # Create a .claude/settings.json for the workspace
 cat > "$WORKSPACE_DIR/.claude/settings.json" <<'EOF'
 {

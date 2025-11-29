@@ -28,15 +28,21 @@ Find the latest version at: https://central.sonatype.com/artifact/io.temporal/te
 
 Temporal provides a Spring Boot Starter for Spring applications (Public Preview status).
 
-### When to Use Spring Boot Integration
+### Quick Decision Guide
+
+**Use Spring Boot Integration if:**
 - You're building a Spring Boot application
-- You want autoconfiguration of Temporal components
-- You want Spring dependency injection for workflows/activities
-- You need Spring Boot Actuator metrics integration
+- You want autoconfiguration and YAML configuration
+- You need Spring dependency injection for activities
 
-### Spring Boot Starter Dependency
+**Use Standard SDK if:**
+- Building standalone Java application
+- Want explicit control over configuration
+- Not using Spring framework
 
-**Maven:**
+### For Spring Boot Integration
+
+**Required Dependency:**
 ```xml
 <dependency>
     <groupId>io.temporal</groupId>
@@ -45,47 +51,29 @@ Temporal provides a Spring Boot Starter for Spring applications (Public Preview 
 </dependency>
 ```
 
-**Gradle:**
-```gradle
-implementation 'io.temporal:temporal-spring-boot-starter:[latest-version]'
-```
+**IMPORTANT:** Use artifact ID `temporal-spring-boot-starter` (NOT `temporal-spring-boot-starter-alpha`)
 
-Find the latest version at: https://central.sonatype.com/artifact/io.temporal/temporal-spring-boot-starter
+**Detailed Reference Available:**
+The file `references/spring-boot.md` contains comprehensive information including:
+- Complete setup instructions and examples
+- Spring Boot annotations (@WorkflowImpl, @ActivityImpl)
+- Application.yml configuration
+- Project structure recommendations
+- Dependency injection patterns
+- Testing with Spring Boot
+- Best practices and troubleshooting
 
-### Key Features
-- **Autoconfiguration**: Automatic setup of WorkflowClient, WorkerFactory
-- **Spring Annotations**: `@WorkflowImpl`, `@ActivityImpl` for component scanning
-- **Configuration**: YAML-based configuration (application.yml)
-- **Dependency Injection**: Inject services into activities
-- **Metrics**: Built-in Spring Boot Actuator integration
-- **Testing**: Spring Boot test support with TestWorkflowEnvironment
+**Key Documentation:**
+- **Detailed Reference**: See `references/spring-boot.md` in this skill package
+- **Official Guide**: https://docs.temporal.io/develop/java/spring-boot-integration
+- **Latest Version**: https://central.sonatype.com/artifact/io.temporal/temporal-spring-boot-starter
 
-### Documentation
-- **Integration Guide**: https://docs.temporal.io/develop/java/spring-boot-integration
-- **Configuration Reference**: https://docs.temporal.io/develop/java/spring-boot-integration#configuration
-- **Samples**: Check the samples repository for Spring Boot examples
-
-### Configuration (application.yml)
-```yaml
-spring:
-  temporal:
-    connection:
-      target: localhost:7233  # or "local" for default
-    namespace: default
-    workers:
-      - task-queue: my-task-queue
-        workflow-classes:
-          - com.example.workflows.MyWorkflowImpl
-        activity-beans:
-          - myActivitiesBean
-```
-
-### Annotations
-- `@WorkflowImpl` - Mark workflow implementation classes
-- `@ActivityImpl` - Mark activity beans (with `@Component`)
-- Use Spring's `@Component`, `@Service` for dependency injection
-
-**Note:** If using Spring Boot integration, you don't need to manually create WorkflowClient, WorkerFactory, or Workers - Spring Boot autoconfigures them.
+**Quick Summary:**
+- Add `temporal-spring-boot-starter` dependency (exact artifact name)
+- Add Spring Boot parent to pom.xml
+- Configure via `application.yml`
+- Use `@WorkflowImpl` and `@ActivityImpl` annotations
+- Spring Boot autoconfigures WorkflowClient and Workers
 
 ## Core Concepts & Where to Find Them
 
