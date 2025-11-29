@@ -1,0 +1,52 @@
+# Operating System Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+*~
+
+# IDE and Editor Files
+.vscode/
+.idea/
+*.swp
+*.swo
+*.swn
+.*.sw?
+*.bak
+
+# Temporary Files
+*.tmp
+*.temp
+.cache/
+
+# Build artifacts (if testing examples from skills)
+target/
+build/
+dist/
+*.class
+*.jar
+*.war
+*.ear
+
+# Node modules (if any JS/TS tooling)
+node_modules/
+package-lock.json
+yarn.lock
+
+# Python virtual environments (if any Python tooling)
+venv/
+.venv/
+*.pyc
+__pycache__/
+
+# Logs
+*.log
+logs/
+
+# Environment files
+.env
+.env.local
+.env.*.local

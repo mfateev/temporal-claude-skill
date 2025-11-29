@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(code .)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
