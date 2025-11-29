@@ -14,7 +14,8 @@
       "Bash(./build-skill-package.sh:*)",
       "Bash(python3:*)",
       "WebFetch(domain:docs.temporal.io)",
-      "Bash(./run-spring-boot-test.sh:*)"
+      "Bash(./run-spring-boot-test.sh:*)",
+      "Bash(unzip:*)"
     ],
     "deny": [],
     "ask": []
