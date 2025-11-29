@@ -96,7 +96,8 @@ extract_metadata() {
   \"format\": \"cloud-skill-v1\",
   \"files\": [
     \"temporal-java.md\",
-    \"references/spring-boot.md\"
+    \"references/spring-boot.md\",
+    \"references/samples.md\"
   ]
 }"
 }
@@ -156,6 +157,7 @@ The skill will guide Claude to:
 - **temporal-java.md**: Main skill file with documentation references
 - **references/**: Additional reference documentation
   - **spring-boot.md**: Comprehensive Spring Boot integration guide
+  - **samples.md**: Categorized list of code samples with descriptions
 - **skill-metadata.json**: Metadata for Cloud skill management
 - **README.md**: This file
 

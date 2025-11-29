@@ -190,11 +190,28 @@ Search the JavaDoc for these packages:
 7. Use Continue-As-New for long-running workflows
 8. Use versioning for safe workflow updates
 
-## Common Questions
+## Code Examples and Samples
 
-**Finding Examples:**
-- Official samples: https://github.com/temporalio/samples-java
-- Documentation tutorials: https://learn.temporal.io/
+**Comprehensive Sample Reference:**
+- **Detailed Sample Guide**: See `references/samples.md` for categorized samples with descriptions
+  - Hello samples (getting started)
+  - Scenario-based samples (real-world patterns)
+  - Spring Boot integration samples
+  - Advanced features (interceptors, metrics, encryption)
+  - Testing examples
+
+**Direct Links:**
+- **Samples Repository**: https://github.com/temporalio/samples-java
+- **Interactive Tutorials**: https://learn.temporal.io/
+
+**Quick Sample Lookup by Use Case:**
+- Getting started: `HelloActivity.java`
+- Signals/Queries: `HelloSignal.java`, `HelloQuery.java`
+- Error handling: `HelloSaga.java`
+- Spring Boot: `/springboot` directory
+- See `references/samples.md` for complete categorized list
+
+## Common Questions
 
 **API Questions:**
 - Search the JavaDoc: https://www.javadoc.io/doc/io.temporal/temporal-sdk/latest/index.html
