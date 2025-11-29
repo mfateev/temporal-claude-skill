@@ -1,0 +1,11 @@
+# Generated test workspace
+test-workspace/
+
+# Build artifacts
+*.log
+target/
+build/
+
+# Python
+__pycache__/
+*.pyc
