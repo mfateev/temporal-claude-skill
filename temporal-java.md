@@ -20,7 +20,7 @@ Artifact IDs:
   - temporal-testing (testing utilities)
 ```
 
-Find the latest version at: https://search.maven.org/artifact/io.temporal/temporal-sdk
+Find the latest version at: https://central.sonatype.com/artifact/io.temporal/temporal-sdk
 
 ## Core Concepts & Where to Find Them
 
@@ -126,9 +126,6 @@ Search the JavaDoc for these packages:
 - **Documentation**: https://docs.temporal.io/namespaces
 
 ## Best Practices
-
-Refer to the official best practices guide:
-https://docs.temporal.io/dev-guide/java/best-practices
 
 **Key Points:**
 1. Workflows must be deterministic: https://docs.temporal.io/develop/java/core-application#workflow-logic-requirements
