@@ -40,11 +40,11 @@ setup_workspace() {
     mkdir -p "${WORKSPACE_DIR}/.claude/skills"
 
     # Copy skill
-    cp "${SCRIPT_DIR}/../../src/temporal-java.md" "${WORKSPACE_DIR}/.claude/skills/"
+    cp "${SCRIPT_DIR}/../../temporal-java.md" "${WORKSPACE_DIR}/.claude/skills/"
 
     # Copy references directory
-    if [ -d "${SCRIPT_DIR}/../../src/references" ]; then
-        cp -r "${SCRIPT_DIR}/../../src/references" "${WORKSPACE_DIR}/.claude/skills/"
+    if [ -d "${SCRIPT_DIR}/../../references" ]; then
+        cp -r "${SCRIPT_DIR}/../../references" "${WORKSPACE_DIR}/.claude/skills/"
     fi
 
     # Copy Spring Boot prompt
