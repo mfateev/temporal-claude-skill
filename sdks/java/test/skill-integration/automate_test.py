@@ -142,7 +142,8 @@ def extract_code_blocks(response: str) -> Dict[str, str]:
         # Try to infer from package and class name
         if not file_path and 'package ' in block:
             package_match = re.search(r'package\s+([\w.]+);', block)
-            class_match = re.search(r'(?:public\s+)?(?:class|interface)\s+(\w+)', block)
+            # Match class/interface declarations more strictly (must be at line start after optional annotations/whitespace)
+            class_match = re.search(r'^\s*(?:@\w+\s+)*(?:public\s+)?(?:class|interface|enum)\s+(\w+)', block, re.MULTILINE)
 
             if package_match and class_match:
                 package = package_match.group(1).replace('.', '/')
@@ -217,8 +218,8 @@ def fallback_extraction(response: str, workspace_dir: Path) -> bool:
         elif 'package ' in block:
             package_match = re.search(r'package\s+([\w.]+);', block)
 
-            # Look for class/interface name
-            class_match = re.search(r'(?:public\s+)?(?:class|interface)\s+(\w+)', block)
+            # Look for class/interface name more strictly (must be at line start after optional annotations/whitespace)
+            class_match = re.search(r'^\s*(?:@\w+\s+)*(?:public\s+)?(?:class|interface|enum)\s+(\w+)', block, re.MULTILINE)
 
             if package_match and class_match:
                 package = package_match.group(1).replace('.', '/')
@@ -263,7 +264,7 @@ def main():
 
     # Paths
     script_dir = Path(__file__).parent
-    skill_path = script_dir.parent.parent / "src" / "temporal-java.md"
+    skill_path = script_dir.parent.parent.parent.parent / "sdks" / "java" / "java.md"
 
     # Allow workspace directory to be overridden via command line or environment
     if len(sys.argv) > 1:

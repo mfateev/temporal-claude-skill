@@ -11,8 +11,8 @@ echo -e "${YELLOW}=== Setting up Temporal Java Skill Test Workspace ===${NC}\n"
 
 # Get the directory where this script is located
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-SKILL_FILE="$SCRIPT_DIR/../../../../../temporal.md"
-SDK_DIR="$SCRIPT_DIR/../../"
+SKILL_FILE="$SCRIPT_DIR/../../../../temporal.md"
+SDK_DIR="$SCRIPT_DIR/../../../../sdks"
 WORKSPACE_DIR="$SCRIPT_DIR/test-workspace"
 
 # Clean up old workspace if it exists
@@ -24,7 +24,7 @@ fi
 # Create test workspace directory
 echo -e "${YELLOW}Creating test workspace at: ${WORKSPACE_DIR}${NC}"
 mkdir -p "$WORKSPACE_DIR/.claude/skills"
-mkdir -p "$WORKSPACE_DIR/src"
+mkdir -p "$WORKSPACE_DIR/src/main/resources"
 
 # Copy the main skill file
 echo -e "${YELLOW}Installing temporal.md skill...${NC}"
@@ -32,7 +32,7 @@ cp "$SKILL_FILE" "$WORKSPACE_DIR/.claude/skills/"
 
 # Copy SDK resources
 echo -e "${YELLOW}Installing SDK resources...${NC}"
-cp -r "$(dirname "$SDK_DIR")/sdks" "$WORKSPACE_DIR/.claude/skills/"
+cp -r "$SDK_DIR" "$WORKSPACE_DIR/.claude/skills/"
 
 # Create a .claude/settings.json for the workspace
 cat > "$WORKSPACE_DIR/.claude/settings.json" <<'EOF'
@@ -109,6 +109,28 @@ The generated structure will vary but should include:
 The exact directory structure (e.g., workflow/ vs workflows/) and file names
 may vary. Claude validation will intelligently analyze the structure.
 EOF
+
+# Create logback.xml to suppress verbose Netty logging
+echo -e "${YELLOW}Creating logback.xml configuration...${NC}"
+cat > "$WORKSPACE_DIR/src/main/resources/logback.xml" <<'EOF'
+<configuration>
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- Suppress verbose gRPC/Netty logging -->
+    <logger name="io.grpc.netty" level="WARN"/>
+    <logger name="io.grpc.netty.shaded.io.grpc.netty" level="WARN"/>
+    <logger name="io.netty" level="WARN"/>
+
+    <root level="INFO">
+        <appender-ref ref="STDOUT"/>
+    </root>
+</configuration>
+EOF
+echo -e "${GREEN}✓ Logback configuration installed${NC}"
 
 # Copy the execution test script to workspace
 echo -e "${YELLOW}Installing execution test script...${NC}"

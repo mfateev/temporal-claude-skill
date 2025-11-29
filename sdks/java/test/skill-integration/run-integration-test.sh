@@ -113,7 +113,9 @@ fi
 
 echo -e "${YELLOW}Running execution test (set SKIP_EXECUTION=true to skip)${NC}\n"
 
-if ./test-execution.sh; then
+# Change to workspace directory for execution test
+cd "$WORKSPACE_DIR"
+if "$SCRIPT_DIR/test-execution.sh"; then
     echo -e "\n${GREEN}╔════════════════════════════════════════════════╗${NC}"
     echo -e "${GREEN}║       FULL INTEGRATION TEST PASSED!            ║${NC}"
     echo -e "${GREEN}║       (Structure, Build & Execution)           ║${NC}"
