@@ -57,11 +57,15 @@ test-workspace/
 - Compiles the project
 
 ### 2. `test-execution.sh` - Execution Testing
-- **Temporal Management**: Checks if running, starts if needed
+- **Temporal Management**:
+  - Checks if running on port 7233
+  - Starts with `temporal server start-dev` if not running
+  - Detects "address already in use" and proceeds if Temporal is accessible
+  - Only stops Temporal if we started it
 - **Worker**: Starts in background, monitors startup
 - **Client**: Executes workflow with test data
 - **Verification**: Checks workflow completes successfully
-- **Cleanup**: Stops worker, stops Temporal if we started it
+- **Cleanup**: Stops worker, stops Temporal only if we started it
 - **Auto-cleanup**: Uses trap to cleanup on exit/error
 
 ## Prerequisites

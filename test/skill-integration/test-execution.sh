@@ -49,6 +49,24 @@ start_temporal() {
             echo -e "${GREEN}✓ Temporal server is ready${NC}"
             return 0
         fi
+
+        # Check if we got "address already in use" error
+        if grep -q "address already in use" temporal-server.log 2>/dev/null; then
+            echo -e "\n${YELLOW}! Port already in use - Temporal is already running${NC}"
+            # Clean up our failed start attempt
+            kill $TEMPORAL_PID 2>/dev/null || true
+            rm -f .temporal-server.pid
+
+            # Verify Temporal is actually accessible
+            if check_temporal; then
+                echo -e "${GREEN}✓ Confirmed Temporal server is accessible${NC}"
+                return 0
+            else
+                echo -e "${RED}✗ Port is in use but Temporal is not responding${NC}"
+                return 1
+            fi
+        fi
+
         sleep 1
         echo -n "."
     done
@@ -60,7 +78,8 @@ start_temporal() {
 
 # Function to stop Temporal server
 stop_temporal() {
-    if [ -f ".temporal-server.pid" ]; then
+    # Only stop if we started it
+    if [ "${TEMPORAL_STARTED_BY_US:-false}" = "true" ] && [ -f ".temporal-server.pid" ]; then
         TEMPORAL_PID=$(cat .temporal-server.pid)
         echo -e "${YELLOW}Stopping Temporal server (PID: $TEMPORAL_PID)...${NC}"
         kill $TEMPORAL_PID 2>/dev/null || true
@@ -82,7 +101,13 @@ else
     if ! start_temporal; then
         exit 1
     fi
-    TEMPORAL_STARTED_BY_US=true
+    # Check if start_temporal detected it was already running
+    if [ -f ".temporal-server.pid" ]; then
+        TEMPORAL_STARTED_BY_US=true
+    else
+        # start_temporal detected "address already in use" and didn't create pid file
+        TEMPORAL_STARTED_BY_US=false
+    fi
 fi
 
 echo ""
