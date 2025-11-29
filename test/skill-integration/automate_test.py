@@ -263,7 +263,7 @@ def main():
 
     # Paths
     script_dir = Path(__file__).parent
-    skill_path = script_dir.parent.parent / "temporal-java.md"
+    skill_path = script_dir.parent.parent / "src" / "temporal-java.md"
 
     # Allow workspace directory to be overridden via command line or environment
     if len(sys.argv) > 1:

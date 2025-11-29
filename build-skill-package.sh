@@ -110,17 +110,17 @@ create_package_structure() {
     mkdir -p "${pkg_dir}"
 
     # Copy skill file
-    cp "${SCRIPT_DIR}/temporal-java.md" "${pkg_dir}/"
+    cp "${SCRIPT_DIR}/src/temporal-java.md" "${pkg_dir}/"
     print_success "Copied skill file"
 
     # Copy references directory
-    if [ -d "${SCRIPT_DIR}/references" ]; then
-        cp -r "${SCRIPT_DIR}/references" "${pkg_dir}/"
+    if [ -d "${SCRIPT_DIR}/src/references" ]; then
+        cp -r "${SCRIPT_DIR}/src/references" "${pkg_dir}/"
         print_success "Copied references directory"
     fi
 
     # Generate metadata
-    extract_metadata "${SCRIPT_DIR}/temporal-java.md" > "${pkg_dir}/skill-metadata.json"
+    extract_metadata "${SCRIPT_DIR}/src/temporal-java.md" > "${pkg_dir}/skill-metadata.json"
     print_success "Generated metadata file"
 
     # Create README for the package
@@ -310,7 +310,7 @@ main() {
 
     # Execute build steps
     clean_build
-    validate_skill "${SCRIPT_DIR}/temporal-java.md" || exit 1
+    validate_skill "${SCRIPT_DIR}/src/temporal-java.md" || exit 1
     create_package_structure
 
     if [ "$SKIP_URL_CHECK" = false ]; then
