@@ -10,7 +10,9 @@
       "Bash(git commit -m \"$(cat <<''EOF''\nReplace hello world test with skill validation test\n\nReplace the previous application test with a proper skill validation\ntest that actually tests the temporal-java.md skill itself.\n\nThe new test:\n- Reads and parses the temporal-java.md skill file\n- Fetches the latest Temporal SDK version from Maven Central\n- Generates a complete working application from skill patterns\n- Validates that all patterns from the skill work correctly\n- Builds and executes the generated application\n- Verifies end-to-end workflow execution\n\nThis is a proper meta-test that validates:\n✓ Skill file is readable and parseable\n✓ Code examples are syntactically correct\n✓ Latest version fetching works as documented\n✓ Workflow/activity patterns compile\n✓ Worker registration pattern works\n✓ Client invocation pattern works\n✓ Generated code executes successfully\n\nTest is implemented in Python for easier markdown parsing\nand project generation.\nEOF\n)\")",
       "Bash(git commit:*)",
       "Bash(./run-integration-test.sh:*)",
-      "Bash(./test-execution.sh)"
+      "Bash(./test-execution.sh)",
+      "Bash(./build-skill-package.sh:*)",
+      "Bash(python3:*)"
     ],
     "deny": [],
     "ask": []

@@ -50,3 +50,8 @@ logs/
 .env
 .env.local
 .env.*.local
+
+# Build artifacts for skill packaging
+build/
+dist/
+*.zip
