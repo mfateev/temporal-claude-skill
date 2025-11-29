@@ -22,6 +22,71 @@ Artifact IDs:
 
 Find the latest version at: https://central.sonatype.com/artifact/io.temporal/temporal-sdk
 
+## Spring Boot Integration (Optional)
+
+**IMPORTANT: Ask the developer if they want to use Spring Boot integration before proceeding.**
+
+Temporal provides a Spring Boot Starter for Spring applications (Public Preview status).
+
+### When to Use Spring Boot Integration
+- You're building a Spring Boot application
+- You want autoconfiguration of Temporal components
+- You want Spring dependency injection for workflows/activities
+- You need Spring Boot Actuator metrics integration
+
+### Spring Boot Starter Dependency
+
+**Maven:**
+```xml
+<dependency>
+    <groupId>io.temporal</groupId>
+    <artifactId>temporal-spring-boot-starter</artifactId>
+    <version>[latest-version]</version>
+</dependency>
+```
+
+**Gradle:**
+```gradle
+implementation 'io.temporal:temporal-spring-boot-starter:[latest-version]'
+```
+
+Find the latest version at: https://central.sonatype.com/artifact/io.temporal/temporal-spring-boot-starter
+
+### Key Features
+- **Autoconfiguration**: Automatic setup of WorkflowClient, WorkerFactory
+- **Spring Annotations**: `@WorkflowImpl`, `@ActivityImpl` for component scanning
+- **Configuration**: YAML-based configuration (application.yml)
+- **Dependency Injection**: Inject services into activities
+- **Metrics**: Built-in Spring Boot Actuator integration
+- **Testing**: Spring Boot test support with TestWorkflowEnvironment
+
+### Documentation
+- **Integration Guide**: https://docs.temporal.io/develop/java/spring-boot-integration
+- **Configuration Reference**: https://docs.temporal.io/develop/java/spring-boot-integration#configuration
+- **Samples**: Check the samples repository for Spring Boot examples
+
+### Configuration (application.yml)
+```yaml
+spring:
+  temporal:
+    connection:
+      target: localhost:7233  # or "local" for default
+    namespace: default
+    workers:
+      - task-queue: my-task-queue
+        workflow-classes:
+          - com.example.workflows.MyWorkflowImpl
+        activity-beans:
+          - myActivitiesBean
+```
+
+### Annotations
+- `@WorkflowImpl` - Mark workflow implementation classes
+- `@ActivityImpl` - Mark activity beans (with `@Component`)
+- Use Spring's `@Component`, `@Service` for dependency injection
+
+**Note:** If using Spring Boot integration, you don't need to manually create WorkflowClient, WorkerFactory, or Workers - Spring Boot autoconfigures them.
+
 ## Core Concepts & Where to Find Them
 
 ### Workflows

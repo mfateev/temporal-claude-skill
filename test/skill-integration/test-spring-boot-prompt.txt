@@ -1,0 +1,22 @@
+Create a Temporal workflow using Spring Boot integration that executes two activities.
+After the first activity the workflow awaits a signal. When the signal is received it executes the second activity.
+
+Use the temporal-java skill with Spring Boot integration.
+
+Requirements:
+- USE SPRING BOOT INTEGRATION with temporal-spring-boot-starter
+- Create a workflow with a signal method
+- First activity processes initial data
+- Workflow waits for a signal after first activity
+- Second activity processes final data after signal received
+- Use Spring Boot annotations (@WorkflowImpl, @ActivityImpl, @Component)
+- Configure worker in application.yml
+- Create a Spring Boot application with @SpringBootApplication
+- Use Maven for dependency management
+- Use the latest Temporal Spring Boot Starter version
+- Include Spring Boot parent in pom.xml
+
+Package: io.temporal.hello
+Main class: io.temporal.hello.TemporalSpringBootApplication
+
+IMPORTANT: This should be a Spring Boot application, not a plain Java application.

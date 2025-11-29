@@ -264,7 +264,15 @@ def main():
     # Paths
     script_dir = Path(__file__).parent
     skill_path = script_dir.parent.parent / "temporal-java.md"
-    workspace_dir = script_dir / "test-workspace"
+
+    # Allow workspace directory to be overridden via command line or environment
+    if len(sys.argv) > 1:
+        workspace_dir = Path(sys.argv[1])
+    elif 'TEST_WORKSPACE' in os.environ:
+        workspace_dir = Path(os.environ['TEST_WORKSPACE'])
+    else:
+        workspace_dir = script_dir / "test-workspace"
+
     prompt_path = workspace_dir / "test-prompt.txt"
 
     # Read skill and prompt

@@ -1,5 +1,6 @@
-# Generated test workspace
+# Generated test workspaces
 test-workspace/
+test-workspace-spring/
 
 # Build artifacts
 *.log

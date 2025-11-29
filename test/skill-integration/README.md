@@ -30,22 +30,33 @@ Unlike a simple code validation test, this integration test:
 
 ```
 test/skill-integration/
-├── setup-test-workspace.sh      # Creates test workspace with skill
-├── run-integration-test.sh      # Runs the full integration test
-├── automate_test.py             # Python script for API automation
-├── test-execution.sh            # Execution test (runs worker/client)
-├── .gitignore                   # Ignores generated workspace
-└── README.md                    # This file
+├── setup-test-workspace.sh         # Creates test workspace with skill
+├── run-integration-test.sh         # Runs standard SDK integration test
+├── run-spring-boot-test.sh         # Runs Spring Boot integration test
+├── test-spring-boot-prompt.txt     # Prompt for Spring Boot test
+├── automate_test.py                # Python script for API automation
+├── test-execution.sh               # Execution test (runs worker/client)
+├── .gitignore                      # Ignores generated workspaces
+└── README.md                       # This file
 
-Generated during test:
+Generated during standard test:
 test-workspace/
 ├── .claude/
 │   └── skills/
-│       └── temporal-java.md     # The skill being tested
-├── test-prompt.txt              # Prompt that triggers the skill
-├── validate.sh                  # Validates structure and build
-├── test-execution.sh            # Tests actual execution
-└── [generated code here]        # Application created by Claude
+│       └── temporal-java.md        # The skill being tested
+├── test-prompt.txt                 # Prompt that triggers the skill
+├── validate.sh                     # Validates structure and build
+├── test-execution.sh               # Tests actual execution
+└── [generated code here]           # Application created by Claude
+
+Generated during Spring Boot test:
+test-workspace-spring/
+├── .claude/
+│   └── skills/
+│       └── temporal-java.md        # The skill being tested
+├── test-prompt.txt                 # Spring Boot specific prompt
+├── validate.sh                     # Validates Spring Boot application
+└── [generated Spring Boot app]     # Spring Boot application with autoconfiguration
 ```
 
 ## Test Components
@@ -140,6 +151,38 @@ cd test/skill-integration
 ```
 
 Will provide manual testing instructions.
+
+### Spring Boot Integration Test
+
+Test the Spring Boot integration separately:
+
+```bash
+export ANTHROPIC_API_KEY='your-api-key-here'
+cd test/skill-integration
+./run-spring-boot-test.sh
+```
+
+This tests that the skill correctly guides Claude to:
+- Use Spring Boot Temporal starter dependency
+- Configure Spring Boot parent in pom.xml
+- Use Spring Boot annotations (@WorkflowImpl, @ActivityImpl)
+- Create a Spring Boot application class with @SpringBootApplication
+- Leverage Spring Boot autoconfiguration
+
+**Validation includes:**
+- Spring Boot parent configuration
+- temporal-spring-boot-starter dependency
+- Spring Boot application class
+- Spring annotations on workflows/activities
+- Successful Maven build
+
+**To run the generated Spring Boot app:**
+```bash
+cd test-workspace-spring
+mvn spring-boot:run
+```
+
+Note: Spring Boot apps with workers run continuously. Press Ctrl+C to stop.
 
 ### Option 2: Manual Step-by-Step
 
