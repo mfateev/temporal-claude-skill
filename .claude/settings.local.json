@@ -12,7 +12,9 @@
       "Bash(./run-integration-test.sh:*)",
       "Bash(./test-execution.sh)",
       "Bash(./build-skill-package.sh:*)",
-      "Bash(python3:*)"
+      "Bash(python3:*)",
+      "WebFetch(domain:docs.temporal.io)",
+      "Bash(./run-spring-boot-test.sh:*)"
     ],
     "deny": [],
     "ask": []
