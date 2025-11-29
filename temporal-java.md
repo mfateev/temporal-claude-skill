@@ -1,451 +1,169 @@
-# Temporal.io Java SDK Application Skill
+# Temporal.io Java SDK Reference Guide
 
-This skill helps create Temporal.io applications using the Java SDK with workflows, activities, workers, and clients.
+This skill provides guidance on working with Temporal.io using the Java SDK by pointing you to official documentation and key APIs.
 
-## Project Setup
+## Official Documentation
 
-### Maven Dependencies (pom.xml)
-```xml
-<dependencies>
-    <!-- Temporal SDK -->
-    <dependency>
-        <groupId>io.temporal</groupId>
-        <artifactId>temporal-sdk</artifactId>
-        <version>1.23.0</version>
-    </dependency>
+**Primary Resources:**
+- **Main Documentation**: https://docs.temporal.io/
+- **Java SDK Documentation**: https://docs.temporal.io/dev-guide/java
+- **Java SDK API Reference**: https://www.javadoc.io/doc/io.temporal/temporal-sdk/latest/index.html
+- **GitHub Repository**: https://github.com/temporalio/sdk-java
+- **Samples Repository**: https://github.com/temporalio/samples-java
 
-    <!-- Testing -->
-    <dependency>
-        <groupId>io.temporal</groupId>
-        <artifactId>temporal-testing</artifactId>
-        <version>1.23.0</version>
-        <scope>test</scope>
-    </dependency>
+## Maven Central Coordinates
 
-    <!-- Logging -->
-    <dependency>
-        <groupId>org.slf4j</groupId>
-        <artifactId>slf4j-api</artifactId>
-        <version>2.0.9</version>
-    </dependency>
-    <dependency>
-        <groupId>ch.qos.logback</groupId>
-        <artifactId>logback-classic</artifactId>
-        <version>1.4.11</version>
-    </dependency>
-</dependencies>
+```
+Group ID: io.temporal
+Artifact IDs:
+  - temporal-sdk (main SDK)
+  - temporal-testing (testing utilities)
 ```
 
-### Gradle Dependencies (build.gradle)
-```groovy
-dependencies {
-    implementation 'io.temporal:temporal-sdk:1.23.0'
-    testImplementation 'io.temporal:temporal-testing:1.23.0'
-    implementation 'org.slf4j:slf4j-api:2.0.9'
-    implementation 'ch.qos.logback:logback-classic:1.4.11'
-}
-```
-
-## Workflow Interface
-
-Workflows define the orchestration logic. They must be deterministic.
-
-```java
-package com.example.workflows;
-
-import io.temporal.workflow.WorkflowInterface;
-import io.temporal.workflow.WorkflowMethod;
-import io.temporal.workflow.QueryMethod;
-import io.temporal.workflow.SignalMethod;
-
-@WorkflowInterface
-public interface MyWorkflow {
-
-    @WorkflowMethod
-    String execute(String input);
-
-    @QueryMethod
-    String getStatus();
-
-    @SignalMethod
-    void updateState(String state);
-}
-```
-
-## Workflow Implementation
-
-```java
-package com.example.workflows;
-
-import io.temporal.activity.ActivityOptions;
-import io.temporal.workflow.Workflow;
-import io.temporal.common.RetryOptions;
-import java.time.Duration;
-import org.slf4j.Logger;
-
-public class MyWorkflowImpl implements MyWorkflow {
-
-    private static final Logger logger = Workflow.getLogger(MyWorkflowImpl.class);
-    private String status = "RUNNING";
-
-    // Configure activity options
-    private final ActivityOptions activityOptions = ActivityOptions.newBuilder()
-        .setStartToCloseTimeout(Duration.ofMinutes(5))
-        .setRetryOptions(RetryOptions.newBuilder()
-            .setMaximumAttempts(3)
-            .setInitialInterval(Duration.ofSeconds(1))
-            .setMaximumInterval(Duration.ofSeconds(10))
-            .setBackoffCoefficient(2.0)
-            .build())
-        .build();
-
-    // Create activity stub
-    private final MyActivities activities = Workflow.newActivityStub(
-        MyActivities.class,
-        activityOptions
-    );
-
-    @Override
-    public String execute(String input) {
-        logger.info("Workflow started with input: {}", input);
-
-        // Execute activities
-        String result1 = activities.processData(input);
-        logger.info("Activity 1 completed: {}", result1);
-
-        // Temporal timer (use instead of Thread.sleep)
-        Workflow.sleep(Duration.ofSeconds(10));
-
-        String result2 = activities.sendNotification(result1);
-        logger.info("Activity 2 completed: {}", result2);
-
-        status = "COMPLETED";
-        return result2;
-    }
-
-    @Override
-    public String getStatus() {
-        return status;
-    }
-
-    @Override
-    public void updateState(String state) {
-        this.status = state;
-        logger.info("Status updated to: {}", state);
-    }
-}
-```
-
-## Activity Interface
-
-Activities contain non-deterministic code like API calls, database operations, etc.
-
-```java
-package com.example.activities;
-
-import io.temporal.activity.ActivityInterface;
-import io.temporal.activity.ActivityMethod;
-
-@ActivityInterface
-public interface MyActivities {
-
-    @ActivityMethod
-    String processData(String data);
-
-    @ActivityMethod
-    String sendNotification(String message);
-}
-```
-
-## Activity Implementation
-
-```java
-package com.example.activities;
-
-import io.temporal.activity.Activity;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-public class MyActivitiesImpl implements MyActivities {
-
-    private static final Logger logger = LoggerFactory.getLogger(MyActivitiesImpl.class);
-
-    @Override
-    public String processData(String data) {
-        logger.info("Processing data: {}", data);
-
-        // Send heartbeat at least each heartbeatTimeout interval for long-running activities
-        Activity.getExecutionContext().heartbeat("processing");
-
-        // Actual processing logic (API calls, DB operations, etc.)
-        String processed = data.toUpperCase() + "_PROCESSED";
-
-        return processed;
-    }
-
-    @Override
-    public String sendNotification(String message) {
-        logger.info("Sending notification: {}", message);
-
-        // External service call
-        // notificationService.send(message);
-
-        return "NOTIFICATION_SENT";
-    }
-}
-```
-
-## Worker Setup
-
-Workers poll task queues and execute workflows and activities.
-
-```java
-package com.example;
-
-import com.example.workflows.MyWorkflowImpl;
-import com.example.activities.MyActivitiesImpl;
-import io.temporal.client.WorkflowClient;
-import io.temporal.serviceclient.WorkflowServiceStubs;
-import io.temporal.worker.Worker;
-import io.temporal.worker.WorkerFactory;
-
-public class TemporalWorker {
-
-    public static final String TASK_QUEUE = "my-task-queue";
-
-    public static void main(String[] args) {
-        // Create connection to Temporal service
-        WorkflowServiceStubs service = WorkflowServiceStubs.newLocalServiceStubs();
-
-        // Create workflow client
-        WorkflowClient client = WorkflowClient.newInstance(service);
-
-        // Create worker factory
-        WorkerFactory factory = WorkerFactory.newInstance(client);
-
-        // Create worker that listens on task queue
-        Worker worker = factory.newWorker(TASK_QUEUE);
-
-        // Register workflow implementations
-        worker.registerWorkflowImplementationTypes(MyWorkflowImpl.class);
-
-        // Register activity implementations
-        worker.registerActivitiesImplementations(new MyActivitiesImpl());
-
-        // Start worker
-        factory.start();
-
-        System.out.println("Worker started for task queue: " + TASK_QUEUE);
-    }
-}
-```
-
-## Client - Starting Workflows
-
-```java
-package com.example;
-
-import com.example.workflows.MyWorkflow;
-import io.temporal.client.WorkflowClient;
-import io.temporal.client.WorkflowOptions;
-import io.temporal.serviceclient.WorkflowServiceStubs;
-import java.util.UUID;
-
-public class TemporalClient {
-
-    public static void main(String[] args) {
-        // Create connection to Temporal service
-        WorkflowServiceStubs service = WorkflowServiceStubs.newLocalServiceStubs();
-
-        // Create workflow client
-        WorkflowClient client = WorkflowClient.newInstance(service);
-
-        // Configure workflow options
-        WorkflowOptions options = WorkflowOptions.newBuilder()
-            .setTaskQueue(TemporalWorker.TASK_QUEUE)
-            .setWorkflowId("my-workflow-" + UUID.randomUUID())
-            .build();
-
-        // Create workflow stub
-        MyWorkflow workflow = client.newWorkflowStub(MyWorkflow.class, options);
-
-        // Start workflow asynchronously
-        String input = "test-data";
-        WorkflowClient.start(workflow::execute, input);
-
-        System.out.println("Workflow started with ID: " + options.getWorkflowId());
-
-        // Query workflow state
-        String status = workflow.getStatus();
-        System.out.println("Current status: " + status);
-
-        // Send signal to workflow
-        workflow.updateState("PAUSED");
-
-        // Wait for result (blocking)
-        // String result = workflow.execute(input);
-        // System.out.println("Result: " + result);
-    }
-}
-```
-
-## Testing Workflows
-
-```java
-package com.example.workflows;
-
-import com.example.activities.MyActivities;
-import io.temporal.testing.TestWorkflowEnvironment;
-import io.temporal.testing.TestWorkflowExtension;
-import io.temporal.worker.Worker;
-import io.temporal.client.WorkflowOptions;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.RegisterExtension;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
-
-class MyWorkflowTest {
-
-    @RegisterExtension
-    public static final TestWorkflowExtension testWorkflow =
-        TestWorkflowExtension.newBuilder()
-            .setWorkflowTypes(MyWorkflowImpl.class)
-            .setDoNotStart(true)
-            .build();
-
-    @Test
-    void testWorkflowExecution(TestWorkflowEnvironment testEnv, Worker worker, MyWorkflow workflow) {
-        // Mock activities
-        MyActivities activities = mock(MyActivities.class);
-        when(activities.processData(anyString())).thenReturn("PROCESSED");
-        when(activities.sendNotification(anyString())).thenReturn("SENT");
-
-        worker.registerActivitiesImplementations(activities);
-        testEnv.start();
-
-        // Execute workflow
-        String result = workflow.execute("test-input");
-
-        // Verify
-        assertEquals("SENT", result);
-        verify(activities).processData("test-input");
-        verify(activities).sendNotification("PROCESSED");
-    }
-}
-```
+Find the latest version at: https://search.maven.org/artifact/io.temporal/temporal-sdk
+
+## Core Concepts & Where to Find Them
+
+### Workflows
+- **What**: Orchestration logic, must be deterministic
+- **Key Annotations**: `@WorkflowInterface`, `@WorkflowMethod`, `@QueryMethod`, `@SignalMethod`
+- **Documentation**: https://docs.temporal.io/workflows
+- **Java Guide**: https://docs.temporal.io/dev-guide/java/foundations#develop-workflows
+
+### Activities
+- **What**: Non-deterministic operations (API calls, database operations)
+- **Key Annotations**: `@ActivityInterface`, `@ActivityMethod`
+- **Documentation**: https://docs.temporal.io/activities
+- **Java Guide**: https://docs.temporal.io/dev-guide/java/foundations#develop-activities
+
+### Workers
+- **What**: Services that poll task queues and execute workflows/activities
+- **Key Classes**: `Worker`, `WorkerFactory`
+- **Documentation**: https://docs.temporal.io/workers
+- **Java Guide**: https://docs.temporal.io/dev-guide/java/foundations#run-a-dev-worker
+
+### Clients
+- **What**: Initiate and interact with workflows
+- **Key Classes**: `WorkflowClient`, `WorkflowStub`
+- **Documentation**: https://docs.temporal.io/encyclopedia/temporal-sdks#temporal-client
+- **Java Guide**: https://docs.temporal.io/dev-guide/java/foundations#connect-to-a-cluster
+
+## Key API Packages
+
+Search the JavaDoc for these packages:
+- `io.temporal.workflow` - Workflow development APIs
+- `io.temporal.activity` - Activity development APIs
+- `io.temporal.client` - Client APIs for starting/querying workflows
+- `io.temporal.worker` - Worker configuration
+- `io.temporal.common` - Common types (RetryOptions, etc.)
+- `io.temporal.testing` - Testing utilities
+
+## Configuration Options
+
+### Activity Options
+- **Class**: `ActivityOptions`
+- **Documentation**: https://docs.temporal.io/dev-guide/java/foundations#activity-timeouts
+- **Key Settings**: StartToCloseTimeout, ScheduleToCloseTimeout, RetryOptions
+
+### Workflow Options
+- **Class**: `WorkflowOptions`
+- **Documentation**: https://docs.temporal.io/dev-guide/java/foundations#workflow-timeouts
+- **Key Settings**: WorkflowId, TaskQueue, WorkflowExecutionTimeout, WorkflowRunTimeout
+
+### Retry Options
+- **Class**: `RetryOptions`
+- **Documentation**: https://docs.temporal.io/encyclopedia/retry-policies
 
 ## Advanced Patterns
 
 ### Child Workflows
-```java
-// In parent workflow
-private final ChildWorkflowOptions childOptions = ChildWorkflowOptions.newBuilder()
-    .setWorkflowId("child-workflow-id")
-    .build();
-
-ChildWorkflow child = Workflow.newChildWorkflowStub(ChildWorkflow.class, childOptions);
-String result = child.execute("input");
-```
+- **Documentation**: https://docs.temporal.io/encyclopedia/child-workflows
+- **Class**: `ChildWorkflowOptions`, use `Workflow.newChildWorkflowStub()`
 
 ### Saga Pattern (Compensation)
-```java
-@Override
-public String execute(String input) {
-    Saga saga = new Saga(new Saga.Options.Builder().setParallelCompensation(false).build());
-
-    try {
-        String result1 = activities.step1(input);
-        saga.addCompensation(activities::compensateStep1, result1);
-
-        String result2 = activities.step2(result1);
-        saga.addCompensation(activities::compensateStep2, result2);
-
-        return result2;
-    } catch (Exception e) {
-        saga.compensate();
-        throw e;
-    }
-}
-```
+- **Documentation**: https://docs.temporal.io/dev-guide/java/features#saga-pattern
+- **Class**: `Saga`
 
 ### Async Activity Completion
-```java
-// In activity
-@Override
-public void asyncActivity(String input) {
-    ActivityExecutionContext context = Activity.getExecutionContext();
-    byte[] taskToken = context.getTaskToken();
+- **Documentation**: https://docs.temporal.io/activities#asynchronous-activity-completion
+- **Key API**: `ActivityExecutionContext.doNotCompleteOnReturn()`
 
-    // Pass token to external system
-    externalService.processAsync(input, taskToken);
+### Continue-As-New
+- **Documentation**: https://docs.temporal.io/workflows#continue-as-new
+- **Use Case**: Prevent workflow history from growing too large in long-running workflows
+- **API**: `Workflow.newContinueAsNewStub()`
 
-    // Throw to indicate async completion
-    context.doNotCompleteOnReturn();
-}
+### Signals and Queries
+- **Signals Documentation**: https://docs.temporal.io/encyclopedia/workflow-message-passing#sending-signals
+- **Queries Documentation**: https://docs.temporal.io/encyclopedia/workflow-message-passing#sending-queries
+- **Annotations**: `@SignalMethod`, `@QueryMethod`
 
-// External system completes using:
-// client.completeActivityById(taskToken, result);
-```
+### Versioning
+- **Documentation**: https://docs.temporal.io/workflows#version
+- **API**: `Workflow.getVersion()` - For safe workflow code updates
 
-### Continue-As-New (Long-running workflows)
-```java
-@Override
-public void execute(int iteration) {
-    if (iteration > 100) {
-        // Continue as new to prevent history from growing too large
-        MyWorkflow continueWorkflow = Workflow.newContinueAsNewStub(MyWorkflow.class);
-        continueWorkflow.execute(0);
-    }
+### Schedules and Cron
+- **Documentation**: https://docs.temporal.io/workflows#schedule
+- **Guide**: https://docs.temporal.io/dev-guide/java/features#schedule-a-workflow
 
-    // Process iteration
-    activities.process(iteration);
+## Testing
 
-    // Continue
-    MyWorkflow continueWorkflow = Workflow.newContinueAsNewStub(MyWorkflow.class);
-    continueWorkflow.execute(iteration + 1);
-}
-```
+### Test Framework
+- **Documentation**: https://docs.temporal.io/dev-guide/java/testing
+- **Key Classes**:
+  - `TestWorkflowEnvironment` - In-memory test environment
+  - `TestWorkflowExtension` - JUnit 5 extension
+  - `TestActivityEnvironment` - For testing activities in isolation
 
 ## Connection Configuration
 
-### Custom Service Connection
-```java
-WorkflowServiceStubsOptions options = WorkflowServiceStubsOptions.newBuilder()
-    .setTarget("temporal.example.com:7233")
-    .build();
+### Service Stubs
+- **Class**: `WorkflowServiceStubs`, `WorkflowServiceStubsOptions`
+- **Documentation**: https://docs.temporal.io/dev-guide/java/foundations#connect-to-a-cluster
 
-WorkflowServiceStubs service = WorkflowServiceStubs.newServiceStubs(options);
-```
-
-### Namespace Configuration
-```java
-WorkflowClient client = WorkflowClient.newInstance(
-    service,
-    WorkflowClientOptions.newBuilder()
-        .setNamespace("my-namespace")
-        .build()
-);
-```
+### Namespaces
+- **Class**: `WorkflowClientOptions`
+- **Documentation**: https://docs.temporal.io/namespaces
 
 ## Best Practices
 
-1. **Determinism**: Workflows must be deterministic - no random numbers, current time, or Thread.sleep
-2. **Use Workflow.getLogger()**: For workflow logging that's replay-safe
-3. **Activity Heartbeats**: For long-running activities to detect failures
-4. **Timeouts**: Always set appropriate timeouts for activities and workflows
-5. **Retry Policies**: Configure retries for transient failures
-6. **Task Queue Separation**: Use different task queues for different worker pools
-7. **Version Workflows**: Use Workflow.getVersion() for safe workflow code updates
-8. **Continue-As-New**: For long-running workflows to prevent history bloat
-9. **Testing**: Use TestWorkflowEnvironment for unit testing
-10. **Idempotency**: Design activities to be idempotent for safe retries
+Refer to the official best practices guide:
+https://docs.temporal.io/dev-guide/java/best-practices
 
-## Common Workflow Patterns
+**Key Points:**
+1. Workflows must be deterministic: https://docs.temporal.io/develop/java/core-application#workflow-logic-requirements
+2. Use `Workflow.getLogger()` for workflow logging (replay-safe)
+3. Set appropriate timeouts for workflows and activities
+4. Configure retry policies for transient failures
+5. Use activity heartbeats for long-running operations
+6. Design activities to be idempotent
+7. Use Continue-As-New for long-running workflows
+8. Use versioning for safe workflow updates
 
-- **Request-Response**: Simple synchronous workflow
-- **Async Activity**: Long-running external operations
-- **Entity Workflow**: Stateful workflow with signals and queries
-- **Saga**: Distributed transactions with compensation
-- **Cron**: Scheduled recurring workflows
-- **Parent-Child**: Workflow orchestration hierarchy
-- **Signal-with-Start**: Create or update workflow atomically
+## Common Questions
+
+**Finding Examples:**
+- Official samples: https://github.com/temporalio/samples-java
+- Documentation tutorials: https://learn.temporal.io/
+
+**API Questions:**
+- Search the JavaDoc: https://www.javadoc.io/doc/io.temporal/temporal-sdk/latest/index.html
+- Look for specific classes or methods in the appropriate package
+
+**Troubleshooting:**
+- Community forum: https://community.temporal.io/
+- GitHub issues: https://github.com/temporalio/sdk-java/issues
+
+## Project Structure
+
+Standard Maven/Gradle Java project structure:
+```
+src/
+├── main/java/
+│   ├── workflows/     # Workflow interfaces and implementations
+│   ├── activities/    # Activity interfaces and implementations
+│   └── [Main classes] # Worker and Client classes
+└── test/java/         # JUnit tests using TestWorkflowEnvironment
+```
+
+Refer to the samples repository for concrete examples: https://github.com/temporalio/samples-java

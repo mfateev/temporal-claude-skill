@@ -1,7 +1,16 @@
 {
   "permissions": {
     "allow": [
-      "Bash(code .)"
+      "Bash(code .)",
+      "WebFetch(domain:central.sonatype.com)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nAdd automated test for Temporal Java SDK skill\n\n- Create complete Hello World Temporal application\n- Include workflow and activity interfaces/implementations\n- Add worker and client for end-to-end testing\n- Use latest Temporal SDK version (1.32.0)\n- Add automated test script with proper setup/teardown\n- Include comprehensive README with troubleshooting guide\n- Add Maven configuration with exec plugin\n- Configure logging with logback\n\nThe test validates:\n- Project structure and dependencies\n- Workflow definition and execution\n- Activity implementation and invocation\n- Worker registration and polling\n- Client workflow initiation\n- End-to-end workflow completion\nEOF\n)\")",
+      "Bash(chmod:*)",
+      "Bash(git restore:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nReplace hello world test with skill validation test\n\nReplace the previous application test with a proper skill validation\ntest that actually tests the temporal-java.md skill itself.\n\nThe new test:\n- Reads and parses the temporal-java.md skill file\n- Fetches the latest Temporal SDK version from Maven Central\n- Generates a complete working application from skill patterns\n- Validates that all patterns from the skill work correctly\n- Builds and executes the generated application\n- Verifies end-to-end workflow execution\n\nThis is a proper meta-test that validates:\n✓ Skill file is readable and parseable\n✓ Code examples are syntactically correct\n✓ Latest version fetching works as documented\n✓ Workflow/activity patterns compile\n✓ Worker registration pattern works\n✓ Client invocation pattern works\n✓ Generated code executes successfully\n\nTest is implemented in Python for easier markdown parsing\nand project generation.\nEOF\n)\")",
+      "Bash(git commit:*)",
+      "Bash(./run-integration-test.sh:*)",
+      "Bash(./test-execution.sh)"
     ],
     "deny": [],
     "ask": []

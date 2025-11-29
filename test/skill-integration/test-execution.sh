@@ -17,7 +17,8 @@ fi
 
 # Function to check if Temporal server is running
 check_temporal() {
-    curl -s http://localhost:7233 > /dev/null 2>&1
+    OUTPUT=$(temporal operator cluster health --tls=false 2>/dev/null)
+    echo "$OUTPUT" | grep -q "SERVING"
     return $?
 }
 
