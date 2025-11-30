@@ -119,10 +119,10 @@ check_python() {
 
 # Step 4: Generate application
 generate_application() {
-    print_step "[4/6] Generating Spring Boot application with Claude API..."
+    print_step "[4/6] Generating Spring Boot application with Claude CLI..."
 
-    cd "${WORKSPACE_DIR}"
-    python3 "${SCRIPT_DIR}/automate_test.py" "${WORKSPACE_DIR}"
+    cd "${SCRIPT_DIR}"
+    python3 "${SCRIPT_DIR}/run_claude_code.py" "${WORKSPACE_DIR}"
 
     if [ $? -eq 0 ]; then
         print_success "Application generated successfully"

@@ -42,7 +42,7 @@ python3 claude_validate.py /path/to/workspace
 The validation is integrated into:
 
 1. **run-integration-test.sh**: Main integration test
-   - Generates application with Anthropic API
+   - Generates application with claude-code CLI
    - Validates with Claude AI
    - Tests execution (optional)
 
@@ -228,10 +228,10 @@ Claude validation will show compilation errors. Check:
                            │
                            ▼
 ┌─────────────────────────────────────────────────────────┐
-│ Generate Code (automate_test.py)                        │
-│ - Use Anthropic API                                     │
-│ - Send skill + prompt to Claude                         │
-│ - Extract generated code                                │
+│ Generate Code (run_claude_code.py)                      │
+│ - Invoke claude-code CLI                                │
+│ - claude-code loads skills from .claude/skills/         │
+│ - Files generated directly by claude-code tools         │
 └─────────────────────────────────────────────────────────┘
                            │
                            ▼
@@ -274,7 +274,8 @@ When modifying the validation:
 
 ## Related Files
 
-- `automate_test.py`: Code generation via API
+- `run_claude_code.py`: Code generation via claude-code CLI
+- `automate_test.py.deprecated`: Old API-based code generation (deprecated)
 - `run-integration-test.sh`: Main test orchestration
 - `run-spring-boot-test.sh`: Spring Boot test
 - `test-execution.sh`: Runtime execution tests

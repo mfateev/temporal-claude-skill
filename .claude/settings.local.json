@@ -20,7 +20,10 @@
       "Bash(git mv:*)",
       "Bash(tree:*)",
       "WebFetch(domain:pypi.org)",
-      "WebFetch(domain:github.com)"
+      "WebFetch(domain:github.com)",
+      "Bash(claude-code --help:*)",
+      "Bash(git rev-parse:*)",
+      "Bash(./setup-test-workspace.sh:*)"
     ],
     "deny": [],
     "ask": []

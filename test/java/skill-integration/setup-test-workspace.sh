@@ -11,8 +11,8 @@ echo -e "${YELLOW}=== Setting up Temporal Java Skill Test Workspace ===${NC}\n"
 
 # Get the directory where this script is located
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-SKILL_FILE="$SCRIPT_DIR/../../../../src/temporal.md"
-SDK_DIR="$SCRIPT_DIR/../../../../src/sdks"
+REPO_ROOT="$(cd "$SCRIPT_DIR" && git rev-parse --show-toplevel)"
+DIST_ZIP="$REPO_ROOT/dist/temporal-skill-latest.zip"
 WORKSPACE_DIR="$SCRIPT_DIR/test-workspace"
 
 # Clean up old workspace if it exists
@@ -26,13 +26,21 @@ echo -e "${YELLOW}Creating test workspace at: ${WORKSPACE_DIR}${NC}"
 mkdir -p "$WORKSPACE_DIR/.claude/skills"
 mkdir -p "$WORKSPACE_DIR/src/main/resources"
 
-# Copy the main skill file
-echo -e "${YELLOW}Installing temporal.md skill...${NC}"
-cp "$SKILL_FILE" "$WORKSPACE_DIR/.claude/skills/"
+# Check if dist zip exists
+if [ ! -f "$DIST_ZIP" ]; then
+    echo -e "${RED}✗ Skill package not found: $DIST_ZIP${NC}"
+    echo -e "Please build the skill package first:"
+    echo -e "  ${YELLOW}cd $REPO_ROOT && ./build-skill-package.sh${NC}"
+    exit 1
+fi
 
-# Copy SDK resources
-echo -e "${YELLOW}Installing SDK resources...${NC}"
-cp -r "$SDK_DIR" "$WORKSPACE_DIR/.claude/skills/"
+# Extract the skill from dist zip
+echo -e "${YELLOW}Installing temporal skill from dist package...${NC}"
+unzip -q "$DIST_ZIP" -d "$WORKSPACE_DIR/.claude/skills/"
+
+# Move files from temporal-skill subdirectory to skills directory
+mv "$WORKSPACE_DIR/.claude/skills/temporal-skill/"* "$WORKSPACE_DIR/.claude/skills/"
+rmdir "$WORKSPACE_DIR/.claude/skills/temporal-skill"
 
 # Create a .claude/settings.json for the workspace
 cat > "$WORKSPACE_DIR/.claude/settings.json" <<'EOF'

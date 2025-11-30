@@ -196,7 +196,12 @@ See [BUILD.md](BUILD.md) for detailed build documentation.
 
 ## Testing
 
-The Java SDK includes a comprehensive integration test suite that validates the skill works end-to-end.
+Integration tests validate the skills work end-to-end in the actual Claude Code workflow.
+
+### Prerequisites
+
+- **claude-code CLI**: `npm install -g @anthropic-ai/claude-code`
+- **Anthropic API Key**: Set as `ANTHROPIC_API_KEY` environment variable
 
 ### Java SDK Integration Tests
 
@@ -214,18 +219,31 @@ cd test/java/skill-integration
 ./run-spring-boot-test.sh
 ```
 
+### Python SDK Integration Tests
+
+```bash
+# Set your Anthropic API key
+export ANTHROPIC_API_KEY='your-api-key-here'
+
+# Test Python SDK
+cd test/python/skill-integration
+./run-integration-test.sh
+```
+
 ### What the Tests Do
 
 The integration tests:
 1. Install the skill (temporal.md + sdks/) in a test workspace
-2. Use the Claude API to generate a complete Temporal application
-3. Validate the generated code structure
-4. Compile the project with Maven
+2. Invoke claude-code CLI with a test prompt that triggers the skill
+3. claude-code auto-loads the skill and generates a complete application
+4. Validate the generated code structure and compilation
 5. Optionally run the application with Temporal server
 
-This proves the skill works correctly and generates production-ready code.
+This proves the skill works correctly in the actual Claude Code user workflow and generates production-ready code.
 
-See [test/java/skill-integration/README.md](test/java/skill-integration/README.md) for detailed test documentation.
+See test READMEs for detailed documentation:
+- [test/java/skill-integration/README.md](test/java/skill-integration/README.md)
+- [test/python/skill-integration/README.md](test/python/skill-integration/README.md)
 
 ## How It Works
 

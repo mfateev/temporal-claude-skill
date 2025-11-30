@@ -34,7 +34,8 @@ test/skill-integration/
 ├── run-integration-test.sh         # Runs standard SDK integration test
 ├── run-spring-boot-test.sh         # Runs Spring Boot integration test
 ├── test-spring-boot-prompt.txt     # Prompt for Spring Boot test
-├── automate_test.py                # Python script for API automation
+├── run_claude_code.py              # Invokes claude-code CLI for automation
+├── automate_test.py.deprecated     # Old API-based script (deprecated)
 ├── test-execution.sh               # Execution test (runs worker/client)
 ├── .gitignore                      # Ignores generated workspaces
 └── README.md                       # This file
@@ -82,8 +83,9 @@ test-workspace-spring/
 ## Prerequisites
 
 ### For Automated Testing
+- **claude-code CLI** - Install with `npm install -g @anthropic-ai/claude-code`
 - **Anthropic API Key** - Set as `ANTHROPIC_API_KEY` environment variable
-- **Python 3** with `anthropic` package (auto-installed if missing)
+- **Python 3** (for test orchestration scripts)
 - **Java 11+** and **Maven** (for validation and building)
 
 ### For Manual Testing
@@ -104,26 +106,31 @@ temporal server start-dev
 
 ## How Automation Works
 
-The automated test uses the **Anthropic API** to:
+The automated test uses **claude-code CLI** to:
 
-1. **Load the skill** - Reads `temporal-java.md`
-2. **Send to Claude** - Invokes Claude API with the skill as system context
-3. **Extract code** - Parses Claude's response to extract code blocks
-4. **Write files** - Creates the project structure with generated code
-5. **Validate** - Runs compilation and structure checks
+1. **Set up workspace** - Creates `.claude/skills/` with the temporal skill
+2. **Invoke claude-code** - Runs `claude-code --cwd <workspace>` with the test prompt
+3. **Auto-load skill** - claude-code automatically loads skills from `.claude/skills/`
+4. **Generate files** - claude-code creates files directly in the workspace using its file tools
+5. **Validate** - Runs compilation and structure checks on generated code
 
-The automation script (`automate_test.py`):
-- Uses the Anthropic Python SDK
-- Sends the skill as system context
-- Processes Claude's response to extract Java/XML files
-- Handles both explicit file paths and inferred structure
-- Saves raw response for debugging
+The automation script (`run_claude_code.py`):
+- Invokes claude-code CLI with the workspace as working directory
+- Pipes the test prompt to claude-code via stdin
+- Streams claude-code output to console for visibility
+- Reports success/failure based on exit code
+
+This approach tests the **actual user workflow** - the same way real users interact with Claude Code.
 
 ## Running the Test
 
 ### Option 1: Fully Automated Test (Recommended)
 
-**With API key:**
+**Prerequisites:**
+1. Install claude-code: `npm install -g @anthropic-ai/claude-code`
+2. Set API key: `export ANTHROPIC_API_KEY='your-api-key-here'`
+
+**Run the test:**
 ```bash
 export ANTHROPIC_API_KEY='your-api-key-here'
 cd test/skill-integration
@@ -132,8 +139,8 @@ cd test/skill-integration
 
 This will:
 1. Set up the test workspace
-2. Use the Anthropic API to invoke Claude with the skill
-3. Generate the complete application automatically
+2. Invoke claude-code CLI with the test prompt
+3. claude-code auto-loads the skill and generates the complete application
 4. Validate structure and build
 5. Test execution with Temporal (optional, skippable)
 6. Report success or failure
@@ -144,13 +151,8 @@ export SKIP_EXECUTION=true
 ./run-integration-test.sh
 ```
 
-**Without API key:**
-```bash
-cd test/skill-integration
-./run-integration-test.sh
-```
-
-Will provide manual testing instructions.
+**If claude-code is not installed:**
+The script will provide installation instructions and exit.
 
 ### Spring Boot Integration Test
 
@@ -337,28 +339,26 @@ You can now test the application:
 
 ## Troubleshooting
 
+### "claude-code CLI not found"
+Install claude-code:
+```bash
+npm install -g @anthropic-ai/claude-code
+```
+
+Or use npx without installation:
+```bash
+npx @anthropic-ai/claude-code
+```
+
 ### "ANTHROPIC_API_KEY environment variable not set"
 - Get your API key from https://console.anthropic.com/
 - Set it: `export ANTHROPIC_API_KEY='your-key'`
-- Or use manual testing mode without API key
 
-### "anthropic package not found"
-The script will try to auto-install, but you can manually install:
-```bash
-pip3 install anthropic
-# or
-pip3 install --user anthropic
-```
-
-### "No files extracted with primary method"
-The script will try fallback extraction. If that fails:
-- Check `test-workspace/claude-response.txt` to see Claude's raw response
-- Claude may not have followed the expected format
-- Try adjusting the prompt in `setup-test-workspace.sh`
-
-### "Claude Code not found" (manual mode)
-- Install Claude Code CLI
-- Or manually open the workspace in your IDE with Claude Code plugin
+### "Code generation failed"
+- Check that claude-code CLI is working: `claude-code --help`
+- Verify your API key is valid
+- Check console output for claude-code errors
+- Try running claude-code manually in the workspace directory
 
 ### "Skill not being used" (manual mode)
 - Verify skill file is in `.claude/skills/temporal-java.md`

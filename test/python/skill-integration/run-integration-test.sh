@@ -33,16 +33,6 @@ print_error() {
 
 print_header
 
-# Check API key
-if [ -z "$ANTHROPIC_API_KEY" ]; then
-    print_error "ANTHROPIC_API_KEY environment variable not set"
-    echo ""
-    echo "Set it with: export ANTHROPIC_API_KEY='your-key-here'"
-    exit 1
-fi
-
-print_success "API key found"
-
 # Step 1: Setup workspace
 print_step "Setting up test workspace..."
 "${SCRIPT_DIR}/setup-test-workspace.sh"
@@ -55,34 +45,47 @@ fi
 print_success "Workspace setup complete"
 echo ""
 
-# Step 2: Check Python and install anthropic package if needed
-print_step "Checking Python environment..."
+# Step 2: Check for Claude CLI
+print_step "Checking for Claude CLI..."
 
-if ! command -v python3 &> /dev/null; then
-    print_error "python3 not found"
-    echo "Install Python 3.10 or later"
+if ! command -v claude &> /dev/null; then
+    print_error "Claude CLI not found"
+    echo ""
+    echo "To install Claude:"
+    echo "  npm install -g @anthropic-ai/claude-code"
+    echo ""
+    echo "Or use npx (no installation needed):"
+    echo "  npx @anthropic-ai/claude-code"
+    echo ""
+    echo "For manual testing without Claude CLI:"
+    echo "  1. cd ${WORKSPACE_DIR}"
+    echo "  2. Open in your editor and copy test-prompt.txt"
+    echo "  3. Use Claude to generate code"
+    echo "  4. Run: cd ${WORKSPACE_DIR} && ./validate.sh"
     exit 1
 fi
 
-PYTHON_VERSION=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')
-print_success "Python $PYTHON_VERSION found"
+print_success "Claude CLI found"
+echo ""
 
-# Check if anthropic package is installed
-if ! python3 -c "import anthropic" 2>/dev/null; then
-    print_step "Installing anthropic package..."
-    pip3 install anthropic --quiet
-    print_success "Installed anthropic package"
-else
-    print_success "anthropic package already installed"
+# Step 3: Check API key
+print_step "Checking for API key..."
+
+if [ -z "$ANTHROPIC_API_KEY" ]; then
+    print_error "ANTHROPIC_API_KEY environment variable not set"
+    echo ""
+    echo "Set it with: export ANTHROPIC_API_KEY='your-key-here'"
+    exit 1
 fi
 
+print_success "API key found"
 echo ""
 
-# Step 3: Generate code using Claude API
-print_step "Generating code using Claude API..."
+# Step 4: Generate code using Claude CLI
+print_step "Generating code using Claude CLI..."
 echo ""
 
-python3 "${SCRIPT_DIR}/automate_test.py"
+python3 "${SCRIPT_DIR}/run_claude_code.py" "${WORKSPACE_DIR}"
 
 if [ $? -ne 0 ]; then
     print_error "Code generation failed"
@@ -93,7 +96,7 @@ echo ""
 print_success "Code generation complete"
 echo ""
 
-# Step 4: Validate generated code
+# Step 5: Validate generated code
 print_step "Validating generated code..."
 echo ""
 

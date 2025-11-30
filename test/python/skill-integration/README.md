@@ -7,8 +7,8 @@ This test validates that the `temporal-python.md` skill works correctly when **a
 This is a **real integration test** that:
 
 1. ✅ **Installs the skill** in a test workspace (`.claude/skills/temporal-python.md`)
-2. ✅ **Uses Claude API** to process a prompt that triggers the skill
-3. ✅ **Generates a complete application** using Claude with the skill
+2. ✅ **Uses claude-code CLI** to process a prompt that triggers the skill
+3. ✅ **Generates a complete application** using claude-code with the skill
 4. ✅ **Validates the generated code**:
    - Correct file structure
    - All required files present
@@ -35,7 +35,8 @@ test/python/skill-integration/
 ├── setup-test-workspace.sh         # Creates test workspace with skill
 ├── run-integration-test.sh         # Runs standard SDK integration test
 ├── test-prompt.txt                 # Prompt for standard test
-├── automate_test.py                # Python script for API automation
+├── run_claude_code.py              # Invokes claude-code CLI for automation
+├── automate_test.py.deprecated     # Old API-based script (deprecated)
 ├── .gitignore                      # Ignores generated workspaces
 └── README.md                       # This file
 
@@ -71,8 +72,9 @@ test-workspace/
 ## Prerequisites
 
 ### For Automated Testing
+- **claude-code CLI** - Install with `npm install -g @anthropic-ai/claude-code`
 - **Anthropic API Key** - Set as `ANTHROPIC_API_KEY` environment variable
-- **Python 3.10+** with `anthropic` package (auto-installed if missing)
+- **Python 3.10+** (for test orchestration scripts)
 
 ### For Validation
 - **Python 3.10+** (for syntax checking)
@@ -91,20 +93,23 @@ The execution test will automatically start Temporal if it's not running.
 
 ### Quick Start (Automated)
 
-```bash
-# Set your API key
-export ANTHROPIC_API_KEY='your-api-key-here'
+**Prerequisites:**
+1. Install claude-code: `npm install -g @anthropic-ai/claude-code`
+2. Set API key: `export ANTHROPIC_API_KEY='your-api-key-here'`
 
-# Run the integration test
+**Run the test:**
+```bash
+export ANTHROPIC_API_KEY='your-api-key-here'
 cd test/python/skill-integration
 ./run-integration-test.sh
 ```
 
 This will:
 1. Set up a test workspace with the skill installed
-2. Use Claude API to generate a complete Temporal Python application
-3. Validate the generated code (syntax, structure, dependencies)
-4. Report results
+2. Invoke claude-code CLI with the test prompt
+3. claude-code auto-loads the skill and generates a complete application
+4. Validate the generated code (syntax, structure, dependencies)
+5. Report results
 
 ### Manual Testing with Claude Code
 
@@ -170,10 +175,27 @@ The skill should guide Claude to generate:
 
 ## Troubleshooting
 
+### "claude-code CLI not found"
+Install claude-code:
+```bash
+npm install -g @anthropic-ai/claude-code
+```
+
+Or use npx without installation:
+```bash
+npx @anthropic-ai/claude-code
+```
+
 ### "ANTHROPIC_API_KEY not set"
 ```bash
 export ANTHROPIC_API_KEY='your-api-key-here'
 ```
+
+### "Code generation failed"
+- Check that claude-code CLI is working: `claude-code --help`
+- Verify your API key is valid
+- Check console output for claude-code errors
+- Try running claude-code manually in the workspace directory
 
 ### "Python syntax errors"
 - Check that generated code uses proper async/await

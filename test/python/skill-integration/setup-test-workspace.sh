@@ -9,9 +9,19 @@ RED='\033[0;31m'
 NC='\033[0m'
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR" && git rev-parse --show-toplevel)"
+DIST_ZIP="$REPO_ROOT/dist/temporal-skill-latest.zip"
 WORKSPACE_DIR="${SCRIPT_DIR}/test-workspace"
 
 echo -e "${YELLOW}Setting up test workspace for Python skill integration test...${NC}"
+
+# Check if dist zip exists
+if [ ! -f "$DIST_ZIP" ]; then
+    echo -e "${RED}✗ Skill package not found: $DIST_ZIP${NC}"
+    echo -e "Please build the skill package first:"
+    echo -e "  ${YELLOW}cd $REPO_ROOT && ./build-skill-package.sh${NC}"
+    exit 1
+fi
 
 # Clean and create workspace
 rm -rf "${WORKSPACE_DIR}"
@@ -19,11 +29,15 @@ mkdir -p "${WORKSPACE_DIR}/.claude/skills"
 
 echo -e "${GREEN}✓ Created test workspace${NC}"
 
-# Copy skill files
-cp "${SCRIPT_DIR}/../../../src/temporal.md" "${WORKSPACE_DIR}/.claude/skills/"
-cp -r "${SCRIPT_DIR}/../../../src/sdks" "${WORKSPACE_DIR}/.claude/skills/"
+# Extract the skill from dist zip
+echo -e "${YELLOW}Installing temporal skill from dist package...${NC}"
+unzip -q "$DIST_ZIP" -d "$WORKSPACE_DIR/.claude/skills/"
 
-echo -e "${GREEN}✓ Installed skill files${NC}"
+# Move files from temporal-skill subdirectory to skills directory
+mv "$WORKSPACE_DIR/.claude/skills/temporal-skill/"* "$WORKSPACE_DIR/.claude/skills/"
+rmdir "$WORKSPACE_DIR/.claude/skills/temporal-skill"
+
+echo -e "${GREEN}✓ Installed skill files from dist package${NC}"
 
 # Copy test prompt
 cp "${SCRIPT_DIR}/test-prompt.txt" "${WORKSPACE_DIR}/"
