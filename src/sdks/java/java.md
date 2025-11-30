@@ -168,6 +168,11 @@ Search the JavaDoc for these packages:
   - `TestWorkflowExtension` - JUnit 5 extension
   - `TestActivityEnvironment` - For testing activities in isolation
 
+**Test File Location:**
+- Place all test files in `src/test/java/` directory (following Maven/Gradle conventions)
+- Test dependencies should have `<scope>test</scope>` in pom.xml
+- Example: `src/test/java/com/example/MyWorkflowTest.java`
+
 ## Connection Configuration
 
 ### Service Stubs
@@ -230,7 +235,14 @@ src/
 │   ├── workflows/     # Workflow interfaces and implementations
 │   ├── activities/    # Activity interfaces and implementations
 │   └── [Main classes] # Worker and Client classes
-└── test/java/         # JUnit tests using TestWorkflowEnvironment
+└── test/java/         # Test files (JUnit tests using TestWorkflowEnvironment)
 ```
+
+**IMPORTANT - Test File Location:**
+- Test files MUST be placed in `src/test/java/` (NOT in `src/main/java/`)
+- This is required for Maven/Gradle to properly compile tests with test-scoped dependencies
+- Example: If you have `io.temporal.hello.Worker`, the test should be:
+  - ✅ Correct: `src/test/java/io/temporal/hello/WorkerTest.java`
+  - ❌ Wrong: `src/main/java/io/temporal/hello/WorkerTest.java`
 
 Refer to the samples repository for concrete examples: https://github.com/temporalio/samples-java
