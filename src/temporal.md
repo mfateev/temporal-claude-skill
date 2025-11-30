@@ -38,9 +38,17 @@ This skill includes detailed resources for each Temporal SDK. Choose the SDK tha
 **Official docs**: https://docs.temporal.io/develop/java
 
 ### Python SDK
-**Resource**: `sdks/python/python.md` *(Coming soon)*
-**Status**: 🚧 Planned
+**Resource**: `sdks/python/python.md`
+**Status**: ✅ Complete
 **Best for**: Data pipelines, ML workflows, async operations
+
+**What's included**:
+- Complete SDK reference guide
+- Poetry/pip dependency management
+- FastAPI/Django/Flask integration patterns
+- Comprehensive samples catalog
+- Testing strategies with pytest
+- Async/await patterns and best practices
 
 **Official docs**: https://docs.temporal.io/develop/python
 

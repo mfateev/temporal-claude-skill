@@ -18,7 +18,9 @@
       "Bash(unzip:*)",
       "Bash(mvn clean compile:*)",
       "Bash(git mv:*)",
-      "Bash(tree:*)"
+      "Bash(tree:*)",
+      "WebFetch(domain:pypi.org)",
+      "WebFetch(domain:github.com)"
     ],
     "deny": [],
     "ask": []

@@ -97,7 +97,7 @@ extract_metadata() {
   \"author\": \"Temporal Technologies\",
   \"created\": \"$(date -u +"%Y-%m-%dT%H:%M:%SZ")\",
   \"format\": \"cloud-skill-v1\",
-  \"sdks\": [\"java\"],
+  \"sdks\": [\"java\", \"python\"],
   \"files\": [
 ${files_json}
   ]
@@ -112,16 +112,16 @@ create_package_structure() {
     mkdir -p "${pkg_dir}"
 
     # Copy main skill file
-    if [ ! -f "${SCRIPT_DIR}/temporal.md" ]; then
-        print_error "Main skill file not found: temporal.md"
+    if [ ! -f "${SCRIPT_DIR}/src/temporal.md" ]; then
+        print_error "Main skill file not found: src/temporal.md"
         return 1
     fi
-    cp "${SCRIPT_DIR}/temporal.md" "${pkg_dir}/"
+    cp "${SCRIPT_DIR}/src/temporal.md" "${pkg_dir}/"
     print_success "Copied main skill file"
 
     # Copy all SDK resources
-    if [ -d "${SCRIPT_DIR}/sdks" ]; then
-        cp -r "${SCRIPT_DIR}/sdks" "${pkg_dir}/"
+    if [ -d "${SCRIPT_DIR}/src/sdks" ]; then
+        cp -r "${SCRIPT_DIR}/src/sdks" "${pkg_dir}/sdks"
         print_success "Copied SDK resources"
 
         # Count SDKs
@@ -130,7 +130,7 @@ create_package_structure() {
     fi
 
     # Generate metadata
-    extract_metadata "${SCRIPT_DIR}/temporal.md" > "${pkg_dir}/skill-metadata.json"
+    extract_metadata "${SCRIPT_DIR}/src/temporal.md" > "${pkg_dir}/skill-metadata.json"
     print_success "Generated metadata file"
 
     # Create README for the package
@@ -347,7 +347,7 @@ main() {
 
     # Execute build steps
     clean_build
-    validate_skill "${SCRIPT_DIR}/temporal.md" || exit 1
+    validate_skill "${SCRIPT_DIR}/src/temporal.md" || exit 1
     create_package_structure || exit 1
 
     if [ "$SKIP_URL_CHECK" = false ]; then

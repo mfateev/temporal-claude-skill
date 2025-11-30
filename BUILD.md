@@ -37,6 +37,8 @@ The skill package includes:
 
 ## Package Structure
 
+The packaged skill has the following structure (source files are in `src/` in the repository but packaged without the `src/` prefix):
+
 ```
 temporal-skill/
 ├── temporal.md           # Main skill file
@@ -163,28 +165,28 @@ To add a new SDK resource:
 
 1. Create SDK directory:
    ```bash
-   mkdir -p sdks/newsdk
+   mkdir -p src/sdks/newsdk
    ```
 
 2. Create the resource file:
    ```bash
    # Must be named <sdk>.md
-   touch sdks/newsdk/newsdk.md
+   touch src/sdks/newsdk/newsdk.md
    ```
 
 3. (Optional) Add references:
    ```bash
-   mkdir -p sdks/newsdk/references
+   mkdir -p src/sdks/newsdk/references
    ```
 
-4. Update `temporal.md` to mention the new SDK
+4. Update `src/temporal.md` to mention the new SDK
 
 5. Build:
    ```bash
    ./build-skill-package.sh
    ```
 
-The build system automatically includes all SDKs in the `sdks/` directory.
+The build system automatically includes all SDKs in the `src/sdks/` directory.
 
 ## Build Artifacts
 
@@ -225,7 +227,7 @@ unzip -l dist/temporal-skill-latest.zip
 
 Use the automated test suite (Java SDK):
 ```bash
-cd sdks/java/test/skill-integration
+cd test/java/skill-integration
 ./run-integration-test.sh
 ```
 

@@ -11,8 +11,8 @@ echo -e "${YELLOW}=== Setting up Temporal Java Skill Test Workspace ===${NC}\n"
 
 # Get the directory where this script is located
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-SKILL_FILE="$SCRIPT_DIR/../../../../temporal.md"
-SDK_DIR="$SCRIPT_DIR/../../../../sdks"
+SKILL_FILE="$SCRIPT_DIR/../../../../src/temporal.md"
+SDK_DIR="$SCRIPT_DIR/../../../../src/sdks"
 WORKSPACE_DIR="$SCRIPT_DIR/test-workspace"
 
 # Clean up old workspace if it exists

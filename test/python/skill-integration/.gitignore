@@ -1,0 +1,31 @@
+# Generated test workspaces
+test-workspace/
+test-workspace-fastapi/
+
+# Build artifacts
+*.log
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+ENV/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Poetry
+poetry.lock
+
+# UV
+.uv/
