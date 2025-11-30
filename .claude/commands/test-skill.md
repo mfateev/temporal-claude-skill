@@ -1,7 +1,7 @@
 Run the unified skill integration test that supports all SDK implementations (Java, Python, and future SDKs).
 
 Before running, verify prerequisites:
-1. ANTHROPIC_API_KEY environment variable is set (check with `echo $ANTHROPIC_API_KEY`)
+1. ANTHROPIC_API_KEY environment variable is set (check with `test -n "$ANTHROPIC_API_KEY" && echo "API key is set" || echo "API key is not set"`)
 2. If not set, inform the user they need to set it: `export ANTHROPIC_API_KEY='your-key'`
 
 Then run the appropriate test:
