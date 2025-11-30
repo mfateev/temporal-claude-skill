@@ -106,6 +106,70 @@ The file `references/framework-integration.md` contains comprehensive informatio
 - Django: Use Django's app structure, configure in settings.py
 - Flask: Basic integration for simpler use cases
 
+## AI Integrations (Optional)
+
+**IMPORTANT: Ask the developer if they want to use AI integrations before proceeding.**
+
+Temporal provides production-ready patterns for building reliable AI systems through the Temporal AI Cookbook. This includes integrating LLM APIs (OpenAI, LiteLLM, etc.), building AI agents with tool selection, and orchestrating complex multi-agent systems like deep research pipelines.
+
+### Quick Decision Guide
+
+**Use AI Integrations if:**
+- Building LLM-powered applications (chatbots, agents, assistants)
+- Implementing AI agents that make decisions about function calls
+- Need durable AI workflows with retry handling
+- Creating research or multi-agent systems
+- Want to ensure LLM calls execute exactly once despite failures
+
+**Use Standard SDK if:**
+- Not integrating AI/LLM capabilities
+- Building traditional workflows without AI
+- No need for AI-specific patterns
+
+### Why Temporal for AI?
+
+- **Durability**: Expensive LLM calls execute exactly once, never lost
+- **Retry Management**: Centralized retry logic for rate limits and transient failures
+- **Observability**: Full execution history of AI agent decisions
+- **Orchestration**: Reliably coordinate multiple AI agents, tools, and APIs
+- **Production Ready**: Battle-tested patterns from companies building AI at scale
+
+### For AI Integrations
+
+**Detailed Reference Available:**
+The file `references/ai-integrations.md` contains comprehensive information including:
+- All 7 AI Cookbook examples with detailed descriptions
+- Foundational patterns: LLM integration, multi-model support, structured outputs
+- Agent patterns: Tool calling agents, durable agents, deep research systems
+- AI-specific patterns: Generic activities, serialization, retry management, timeouts
+- Configuration and setup with code examples
+- Best practices for production AI workflows
+- Testing and troubleshooting guidance
+
+**Key Documentation:**
+- **Detailed Reference**: See `references/ai-integrations.md` in this skill package
+- **AI Cookbook**: https://docs.temporal.io/ai-cookbook
+- **GitHub**: https://github.com/temporalio/ai-cookbook
+
+**Quick Summary:**
+- **LLM Integration**: Hello World examples with OpenAI and LiteLLM
+- **Structured Outputs**: Type-safe data extraction using Pydantic models
+- **Tool Calling Agents**: AI agents that select and execute functions
+- **Durable Agents**: OpenAI Agents SDK integration with Temporal durability
+- **Deep Research**: Multi-agent research pipeline (Planning → Query Gen → Web Search → Synthesis)
+- **Dependencies**: `temporalio[openai-agents]` or `temporalio[pydantic]`, `openai`, `litellm`
+
+**Key Pattern**: Disable retries in LLM clients, let Temporal handle all retry logic:
+```python
+from openai import AsyncOpenAI
+
+# Critical: Set max_retries=0 to let Temporal manage retries
+openai_client = AsyncOpenAI(
+    api_key=os.getenv("OPENAI_API_KEY"),
+    max_retries=0,
+)
+```
+
 ## Core Concepts & Where to Find Them
 
 ### Workflows
