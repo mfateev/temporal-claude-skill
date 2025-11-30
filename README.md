@@ -203,31 +203,56 @@ Integration tests validate the skills work end-to-end in the actual Claude Code 
 - **claude-code CLI**: `npm install -g @anthropic-ai/claude-code`
 - **Anthropic API Key**: Set as `ANTHROPIC_API_KEY` environment variable
 
-### Java SDK Integration Tests
+### Unified Test Runner
 
-Tests both standard SDK and Spring Boot integration paths:
-
-```bash
-# Set your Anthropic API key
-export ANTHROPIC_API_KEY='your-api-key-here'
-
-# Test standard Java SDK
-cd test/java/skill-integration
-./run-integration-test.sh
-
-# Test Spring Boot integration
-./run-spring-boot-test.sh
-```
-
-### Python SDK Integration Tests
+The repository provides a unified test runner at the root that supports all SDK implementations:
 
 ```bash
 # Set your Anthropic API key
 export ANTHROPIC_API_KEY='your-api-key-here'
+
+# Test Java SDK (standard)
+./test-skill.sh Java
+
+# Test Java SDK (Spring Boot variant)
+./test-skill.sh Java --variant spring-boot
 
 # Test Python SDK
-cd test/python/skill-integration
-./run-integration-test.sh
+./test-skill.sh Python
+
+# Validation only (skip execution tests)
+./test-skill.sh Java --skip-execution
+./test-skill.sh Python --skip-execution
+```
+
+Run `./test-skill.sh --help` for all available options and supported SDKs.
+
+### Testing All SDKs
+
+To test all SDKs sequentially:
+
+```bash
+export ANTHROPIC_API_KEY='your-api-key-here'
+
+# Run all tests
+./test-skill.sh Java
+./test-skill.sh Java --variant spring-boot
+./test-skill.sh Python
+```
+
+### Direct SDK Test Scripts
+
+SDK-specific test scripts can still be run directly if needed:
+
+```bash
+# Java standard
+cd test/java/skill-integration && ./run-integration-test.sh
+
+# Java Spring Boot
+cd test/java/skill-integration && ./run-spring-boot-test.sh
+
+# Python
+cd test/python/skill-integration && ./run-integration-test.sh
 ```
 
 ### What the Tests Do
