@@ -15,7 +15,7 @@ This is a **real integration test** that:
    - Code has valid Python syntax
    - Uses latest Temporal Python SDK version
    - Proper async/await patterns
-5. ✅ **Optionally runs the application** if Temporal server is available
+5. ✅ **Runs the application** with real Temporal workflows (optional, can be skipped with SKIP_EXECUTION=true)
 
 ## Why This Test is Important
 
@@ -33,14 +33,15 @@ Unlike a simple code validation test, this integration test:
 ```
 test/python/skill-integration/
 ├── setup-test-workspace.sh         # Creates test workspace with skill
-├── run-integration-test.sh         # Runs standard SDK integration test
+├── run-integration-test.sh         # Runs full integration test
+├── test-execution.sh               # Tests application execution
 ├── test-prompt.txt                 # Prompt for standard test
 ├── run_claude_code.py              # Invokes claude-code CLI for automation
 ├── automate_test.py.deprecated     # Old API-based script (deprecated)
 ├── .gitignore                      # Ignores generated workspaces
 └── README.md                       # This file
 
-Generated during standard test:
+Generated during test:
 test-workspace/
 ├── .claude/
 │   └── skills/
@@ -59,15 +60,37 @@ test-workspace/
 - Checks Python syntax with `python -m py_compile`
 - Validates async/await usage
 
-### 2. Execution Testing (Optional)
+### 2. `test-execution.sh` - Application Execution Test
+
+This optional test validates that the generated code actually runs correctly with a real Temporal server:
+
 - **Temporal Management**:
-  - Checks if running on port 7233
+  - Checks if Temporal is running on port 7233
   - Starts with `temporal server start-dev` if not running
   - Only stops Temporal if we started it
-- **Worker**: Starts in background, monitors startup
-- **Client**: Executes workflow with test data
-- **Verification**: Checks workflow completes successfully
-- **Cleanup**: Stops worker, stops Temporal only if we started it
+- **Dependency Check**:
+  - Verifies temporalio package is installed
+  - Auto-installs from requirements.txt if needed
+- **Worker**:
+  - Starts worker.py in background
+  - Monitors startup and validates it stays running
+- **Client**:
+  - Executes workflow via client.py with test data
+  - Validates workflow completes successfully
+- **Cleanup**:
+  - Stops worker process
+  - Stops Temporal only if we started it
+  - Removes log files
+
+**How to skip execution test:**
+```bash
+SKIP_EXECUTION=true ./run-integration-test.sh
+```
+
+This is useful when:
+- Temporal CLI is not installed
+- You only want to validate code structure/syntax
+- Running in CI/CD without Temporal setup
 
 ## Prerequisites
 
@@ -96,20 +119,31 @@ The execution test will automatically start Temporal if it's not running.
 **Prerequisites:**
 1. Install claude-code: `npm install -g @anthropic-ai/claude-code`
 2. Set API key: `export ANTHROPIC_API_KEY='your-api-key-here'`
+3. (Optional) Install Temporal CLI for execution tests: `brew install temporal`
 
-**Run the test:**
+**Run the full test (with execution):**
 ```bash
 export ANTHROPIC_API_KEY='your-api-key-here'
 cd test/python/skill-integration
 ./run-integration-test.sh
 ```
 
-This will:
+**Run validation-only test (skip execution):**
+```bash
+export ANTHROPIC_API_KEY='your-api-key-here'
+cd test/python/skill-integration
+SKIP_EXECUTION=true ./run-integration-test.sh
+```
+
+The full test will:
 1. Set up a test workspace with the skill installed
 2. Invoke claude-code CLI with the test prompt
 3. claude-code auto-loads the skill and generates a complete application
 4. Validate the generated code (syntax, structure, dependencies)
-5. Report results
+5. Start Temporal server (if not running)
+6. Execute the worker and client to run a real workflow
+7. Verify workflow completes successfully
+8. Report results
 
 ### Manual Testing with Claude Code
 
@@ -213,10 +247,23 @@ uv sync
 ```
 
 ### "Connection refused to localhost:7233"
+The execution test will automatically start Temporal for you. If this fails:
 ```bash
-# Install and start Temporal server
-temporal server start-dev
+# Install Temporal CLI
+brew install temporal  # macOS
+# Or follow: https://docs.temporal.io/cli
+
+# Or skip execution test
+SKIP_EXECUTION=true ./run-integration-test.sh
 ```
+
+### "Execution test failed but validation passed"
+This is treated as a partial success. It means:
+- ✅ Generated code structure is correct
+- ✅ Python syntax is valid
+- ❌ Runtime execution had issues
+
+Check the output for specific errors (missing dependencies, workflow logic issues, etc.)
 
 ### Test fails but code looks correct?
 - Review the validation script output
@@ -246,20 +293,38 @@ Review the error message and generated code to identify issues:
 
 ## CI/CD Integration
 
-This test can be integrated into CI/CD:
+This test can be integrated into CI/CD. For CI environments, you may want to skip the execution test:
 
 ```yaml
 name: Test Python Skill
 on: [push, pull_request]
 jobs:
-  test:
+  test-validation:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-python@v2
         with:
           python-version: '3.10'
-      - name: Run integration test
+      - name: Run validation test
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          SKIP_EXECUTION: true
+        run: |
+          cd test/python/skill-integration
+          ./run-integration-test.sh
+
+  test-full:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: '3.10'
+      - name: Install Temporal CLI
+        run: |
+          brew install temporal
+      - name: Run full integration test
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |

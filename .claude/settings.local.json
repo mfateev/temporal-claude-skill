@@ -23,7 +23,10 @@
       "WebFetch(domain:github.com)",
       "Bash(claude-code --help:*)",
       "Bash(git rev-parse:*)",
-      "Bash(./setup-test-workspace.sh:*)"
+      "Bash(./setup-test-workspace.sh:*)",
+      "Bash(pip install:*)",
+      "Bash(uv pip install:*)",
+      "Bash(../test-execution.sh)"
     ],
     "deny": [],
     "ask": []

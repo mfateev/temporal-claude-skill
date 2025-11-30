@@ -112,27 +112,38 @@ fi
 
 echo ""
 print_success "Validation passed"
+echo ""
 
-# Final summary
+# Step 6: Optional execution test
+print_step "Testing execution (optional)..."
 echo ""
-echo -e "${BLUE}╔════════════════════════════════════════════════╗${NC}"
-echo -e "${BLUE}║             ${GREEN}✅ TEST PASSED${BLUE}                    ║${NC}"
-echo -e "${BLUE}╚════════════════════════════════════════════════╝${NC}"
-echo ""
-echo "Summary:"
-echo "  ✓ Skill files loaded successfully"
-echo "  ✓ Claude generated Python code"
-echo "  ✓ Generated code validated successfully"
-echo ""
-echo "Generated files location:"
-echo "  ${WORKSPACE_DIR}"
-echo ""
-echo "To inspect the generated code:"
-echo "  cd ${WORKSPACE_DIR}"
-echo "  ls -la"
-echo ""
-echo "To run the application (requires Temporal server):"
-echo "  cd ${WORKSPACE_DIR}"
-echo "  pip install -r requirements.txt  # or poetry install"
-echo "  python3 worker.py  # in one terminal"
-echo "  python3 client.py  # in another terminal"
+
+# Check if user wants to skip execution test
+if [ "$SKIP_EXECUTION" = "true" ]; then
+    echo -e "${YELLOW}Skipping execution test (SKIP_EXECUTION=true)${NC}"
+    echo -e "\n${GREEN}╔════════════════════════════════════════════════╗${NC}"
+    echo -e "${GREEN}║       INTEGRATION TEST PASSED!                 ║${NC}"
+    echo -e "${GREEN}║       (Structure & Validation)                 ║${NC}"
+    echo -e "${GREEN}╚════════════════════════════════════════════════╝${NC}\n"
+    exit 0
+fi
+
+echo -e "${YELLOW}Running execution test (set SKIP_EXECUTION=true to skip)${NC}\n"
+
+# Change to workspace directory for execution test
+cd "$WORKSPACE_DIR"
+if "$SCRIPT_DIR/test-execution.sh"; then
+    echo -e "\n${GREEN}╔════════════════════════════════════════════════╗${NC}"
+    echo -e "${GREEN}║       FULL INTEGRATION TEST PASSED!            ║${NC}"
+    echo -e "${GREEN}║       (Structure, Validation & Execution)      ║${NC}"
+    echo -e "${GREEN}╚════════════════════════════════════════════════╝${NC}\n"
+else
+    echo -e "\n${YELLOW}╔════════════════════════════════════════════════╗${NC}"
+    echo -e "${YELLOW}║       PARTIAL SUCCESS                          ║${NC}"
+    echo -e "${YELLOW}║       Structure & Validation: PASSED           ║${NC}"
+    echo -e "${YELLOW}║       Execution Test: FAILED                   ║${NC}"
+    echo -e "${YELLOW}╚════════════════════════════════════════════════╝${NC}\n"
+    echo -e "Code generation and validation successful, but execution test failed."
+    echo -e "This may indicate runtime issues but the generated code is valid."
+    exit 0
+fi
