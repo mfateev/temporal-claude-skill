@@ -1,28 +1,20 @@
 # Go SDK Resource
 
-This resource provides guidance on working with Temporal.io using the Go SDK by pointing you to official documentation and key APIs, along with production-tested best practices.
+<quick-reference>
+## Quick Reference
 
-## Official Documentation
-
-**Primary Resources:**
-- **Main Documentation**: https://docs.temporal.io/
-- **Go SDK Documentation**: https://docs.temporal.io/develop/go
-- **Go SDK API Reference**: https://pkg.go.dev/go.temporal.io/sdk
-- **GitHub Repository**: https://github.com/temporalio/sdk-go
-- **Samples Repository**: https://github.com/temporalio/samples-go
-
-## Go Module Information
-
-```
-Module: go.temporal.io/sdk
-```
-
-Find the latest version at: https://pkg.go.dev/go.temporal.io/sdk
-
-**Installation:**
-```bash
-go get go.temporal.io/sdk
-```
+| Task | Code/Command |
+|------|--------------|
+| Install SDK | `go get go.temporal.io/sdk` |
+| Workflow signature | `func MyWorkflow(ctx workflow.Context, input T) (R, error)` |
+| Activity signature | `func MyActivity(ctx context.Context, input T) (R, error)` |
+| Execute activity | `workflow.ExecuteActivity(ctx, MyActivity, input).Get(ctx, &result)` |
+| Execute child workflow | `workflow.ExecuteChildWorkflow(ctx, ChildWorkflow, input).Get(ctx, &result)` |
+| Get current time | `workflow.Now(ctx)` |
+| Sleep in workflow | `workflow.Sleep(ctx, duration)` |
+| Spawn goroutine | `workflow.Go(ctx, func(ctx workflow.Context) { ... })` |
+| Get logger | `workflow.GetLogger(ctx)` |
+| Version gate | `workflow.GetVersion(ctx, "change-id", workflow.DefaultVersion, 1)` |
 
 **Import Paths:**
 ```go
@@ -34,112 +26,41 @@ import (
     "go.temporal.io/sdk/workflow"
 )
 ```
+</quick-reference>
 
-## Core Concepts & Where to Find Them
+<official-docs>
+## Official Documentation
 
-### Workflows
-- **What**: Orchestration logic, must be deterministic
-- **Key Identifier**: First parameter is `workflow.Context`
-- **Documentation**: https://docs.temporal.io/workflows
-- **Go Guide**: https://docs.temporal.io/develop/go/core-application#develop-workflows
+- **Go SDK Docs**: https://docs.temporal.io/develop/go
+- **API Reference**: https://pkg.go.dev/go.temporal.io/sdk
+- **GitHub**: https://github.com/temporalio/sdk-go
+- **Samples**: https://github.com/temporalio/samples-go
+</official-docs>
 
-**Key Concepts:**
-- Workflow functions take `workflow.Context` as first parameter
-- Must be deterministic (no random, time.Now, UUID, etc.)
-- Use `workflow.*` functions for time, sleep, goroutines, channels
+<determinism-rules>
+## CRITICAL: Workflow Determinism Rules
 
-### Activities
-- **What**: Non-deterministic operations (API calls, database operations)
-- **Key Identifier**: First parameter is `context.Context`
-- **Documentation**: https://docs.temporal.io/activities
-- **Go Guide**: https://docs.temporal.io/develop/go/core-application#develop-activities
+Workflows MUST be deterministic. Use Temporal alternatives:
 
-**Key Concepts:**
-- Activity functions take `context.Context` as first parameter
-- Can perform I/O, use random numbers, call external services
-- Should be idempotent when possible
+| DONT USE | USE INSTEAD |
+|----------|-------------|
+| `time.Now()` | `workflow.Now(ctx)` |
+| `time.Sleep()` | `workflow.Sleep(ctx, d)` |
+| `go func()` | `workflow.Go(ctx, fn)` |
+| `chan T` | `workflow.Channel` |
+| `select {}` | `workflow.Selector` |
+| `context.Context` | `workflow.Context` |
+| `uuid.New()` | `workflow.SideEffect()` |
+| `rand.*` | `workflow.SideEffect()` |
+| `range map` | sort keys first |
+| `log.*` | `workflow.GetLogger(ctx)` |
 
-### Workers
-- **What**: Services that poll task queues and execute workflows/activities
-- **Key Package**: `go.temporal.io/sdk/worker`
-- **Documentation**: https://docs.temporal.io/workers
-- **Go Guide**: https://docs.temporal.io/develop/go/core-application#run-a-dev-worker
-
-**Basic Worker Setup:**
+<example name="deterministic-map-iteration">
 ```go
-import (
-    "go.temporal.io/sdk/client"
-    "go.temporal.io/sdk/worker"
-)
+// WRONG - non-deterministic
+for k, v := range myMap { }
 
-c, err := client.Dial(client.Options{})
-if err != nil {
-    log.Fatalln("Unable to create client", err)
-}
-defer c.Close()
-
-w := worker.New(c, "task-queue-name", worker.Options{})
-w.RegisterWorkflow(MyWorkflow)
-w.RegisterActivity(MyActivity)
-
-err = w.Run(worker.InterruptCh())
-```
-
-### Clients
-- **What**: Initiate and interact with workflows
-- **Key Package**: `go.temporal.io/sdk/client`
-- **Documentation**: https://docs.temporal.io/encyclopedia/temporal-sdks#temporal-client
-- **Go Guide**: https://docs.temporal.io/develop/go/core-application#connect-to-a-cluster
-
-**Basic Client Usage:**
-```go
-import "go.temporal.io/sdk/client"
-
-c, err := client.Dial(client.Options{})
-if err != nil {
-    log.Fatalln("Unable to create client", err)
-}
-defer c.Close()
-
-workflowOptions := client.StartWorkflowOptions{
-    ID:        "my-workflow-id",
-    TaskQueue: "my-task-queue",
-}
-
-we, err := c.ExecuteWorkflow(context.Background(), workflowOptions, MyWorkflow, "input")
-if err != nil {
-    log.Fatalln("Unable to execute workflow", err)
-}
-
-var result string
-err = we.Get(context.Background(), &result)
-```
-
-## Workflow Determinism Rules
-
-**CRITICAL**: Workflows must be deterministic. Use these Temporal-provided alternatives:
-
-| Don't Use | Use Instead | Why |
-|-----------|-------------|-----|
-| `time.Now()` | `workflow.Now(ctx)` | Time must be replay-safe |
-| `time.Sleep()` | `workflow.Sleep(ctx, duration)` | Sleep must be replay-safe |
-| `go func()` | `workflow.Go(ctx, func(ctx workflow.Context))` | Goroutines must be tracked |
-| `chan` | `workflow.Channel` | Channels must be replay-safe |
-| `select` | `workflow.Selector` | Select must be replay-safe |
-| `context.Context` | `workflow.Context` | Different context for workflows |
-| `uuid.New()` | `workflow.SideEffect()` or activity | UUIDs must be deterministic |
-| `rand.*` | `workflow.SideEffect()` or activity | Random must be deterministic |
-| `range map` | Sorted iteration | Map order is non-deterministic |
-| `log.*` | `workflow.GetLogger(ctx)` | Prevents duplicate logs during replay |
-
-**Example - Deterministic Map Iteration:**
-```go
-// Bad - non-deterministic order
-for k, v := range myMap {
-    // order varies between runs
-}
-
-// Good - deterministic order
+// CORRECT - deterministic
 keys := make([]string, 0, len(myMap))
 for k := range myMap {
     keys = append(keys, k)
@@ -147,283 +68,326 @@ for k := range myMap {
 sort.Strings(keys)
 for _, k := range keys {
     v := myMap[k]
-    // consistent order
 }
 ```
+</example>
+</determinism-rules>
 
-## Activity Registration Best Practices
+<patterns>
+## Code Patterns
 
-**Register activities with a prefix** to avoid naming collisions in multi-package projects:
+<pattern name="workflow-definition">
+### Workflow Definition
+```go
+func ProcessOrder(ctx workflow.Context, orderID string) (string, error) {
+    ao := workflow.ActivityOptions{
+        StartToCloseTimeout: 10 * time.Minute,
+    }
+    ctx = workflow.WithActivityOptions(ctx, ao)
+
+    var result string
+    err := workflow.ExecuteActivity(ctx, ProcessPayment, orderID).Get(ctx, &result)
+    if err != nil {
+        return "", err
+    }
+    return result, nil
+}
+```
+</pattern>
+
+<pattern name="activity-definition">
+### Activity Definition
+```go
+func ProcessPayment(ctx context.Context, orderID string) (string, error) {
+    // Can use I/O, random, time.Now(), etc.
+    return fmt.Sprintf("processed-%s", orderID), nil
+}
+```
+</pattern>
+
+<pattern name="worker-setup">
+### Worker Setup
+```go
+func main() {
+    c, err := client.Dial(client.Options{})
+    if err != nil {
+        log.Fatalln("Unable to create client", err)
+    }
+    defer c.Close()
+
+    w := worker.New(c, "task-queue-name", worker.Options{})
+    w.RegisterWorkflow(ProcessOrder)
+    w.RegisterActivity(ProcessPayment)
+
+    err = w.Run(worker.InterruptCh())
+    if err != nil {
+        log.Fatalln("Unable to start worker", err)
+    }
+}
+```
+</pattern>
+
+<pattern name="client-invocation">
+### Start Workflow from Client
+```go
+func main() {
+    c, err := client.Dial(client.Options{})
+    if err != nil {
+        log.Fatalln("Unable to create client", err)
+    }
+    defer c.Close()
+
+    options := client.StartWorkflowOptions{
+        ID:        "order-123",
+        TaskQueue: "task-queue-name",
+    }
+
+    we, err := c.ExecuteWorkflow(context.Background(), options, ProcessOrder, "order-123")
+    if err != nil {
+        log.Fatalln("Unable to execute workflow", err)
+    }
+
+    var result string
+    err = we.Get(context.Background(), &result)
+    if err != nil {
+        log.Fatalln("Workflow failed", err)
+    }
+    log.Println("Result:", result)
+}
+```
+</pattern>
+
+<pattern name="activity-registration-with-prefix">
+### Activity Registration with Prefix
+Use prefixes to avoid naming collisions in multi-package projects:
 
 ```go
-// Bad - potential naming collision
+// WRONG - potential collision
 w.RegisterActivity(myActivities)
 
-// Good - prefixed registration
+// CORRECT - prefixed
 w.RegisterActivityWithOptions(myActivities, activity.RegisterOptions{
     Name: "mypackage.",
 })
 ```
+</pattern>
 
-This allows multiple packages to have activities with the same function names without collision.
+<pattern name="workflow-versioning">
+### Workflow Versioning
+For backward-compatible changes to running workflows:
 
-## Workflow Versioning
-
-Use versioning for workflow changes to ensure backward compatibility with running workflows.
-
-**Basic Version Pattern:**
 ```go
-v := workflow.GetVersion(ctx, "change-description-YYYY-MM-DD", workflow.DefaultVersion, 1)
+v := workflow.GetVersion(ctx, "add-notification-2024-01-15", workflow.DefaultVersion, 1)
 if v == workflow.DefaultVersion {
-    // Execute old logic (for workflows started before the change)
+    // Old logic for existing workflows
 } else {
-    // Execute new logic (for new workflows)
+    // New logic for new workflows
 }
 ```
 
-**Version Cleanup Process** (typically safe after workflow retention period, e.g., 90 days):
-
-**Step 1**: Remove versioned code but keep GetVersion call:
+**Cleanup after retention period (e.g., 90 days):**
 ```go
-// Before cleanup
-if workflow.GetVersion(ctx, "my-change", workflow.DefaultVersion, 1) == workflow.DefaultVersion {
-    oldLogic()
-} else {
-    newLogic()
-}
+// Step 1: Keep GetVersion, remove old branch
+_ = workflow.GetVersion(ctx, "add-notification-2024-01-15", workflow.DefaultVersion, 1)
+newLogic()
 
-// After Step 1
-_ = workflow.GetVersion(ctx, "my-change", workflow.DefaultVersion, 1)
+// Step 2 (separate PR): Remove GetVersion entirely
 newLogic()
 ```
-Step 1 preserves replay safety if the PR needs to be rolled back.
+</pattern>
 
-**Step 2**: Remove GetVersion call entirely (separate PR/release):
+<pattern name="signals">
+### Signals (Send Data to Running Workflow)
 ```go
-// After Step 2
-newLogic()
+// In workflow - receive signal
+signalChan := workflow.GetSignalChannel(ctx, "approve-order")
+var approved bool
+signalChan.Receive(ctx, &approved)
+
+// From client - send signal
+err := c.SignalWorkflow(ctx, workflowID, runID, "approve-order", true)
 ```
+</pattern>
 
-## Configuration Options
-
-### Activity Options
-- **Type**: `workflow.ActivityOptions`
-- **Documentation**: https://docs.temporal.io/develop/go/core-application#activity-timeouts
-- **Key Settings**: StartToCloseTimeout, ScheduleToCloseTimeout, RetryPolicy
-
-**Usage:**
-```go
-ao := workflow.ActivityOptions{
-    StartToCloseTimeout: 10 * time.Minute,
-    RetryPolicy: &temporal.RetryPolicy{
-        InitialInterval:    time.Second,
-        BackoffCoefficient: 2.0,
-        MaximumInterval:    time.Minute,
-        MaximumAttempts:    5,
-    },
-}
-ctx = workflow.WithActivityOptions(ctx, ao)
-
-var result string
-err := workflow.ExecuteActivity(ctx, MyActivity, "input").Get(ctx, &result)
-```
-
-### Workflow Options
-- **Type**: `client.StartWorkflowOptions`
-- **Documentation**: https://docs.temporal.io/develop/go/core-application#workflow-timeouts
-- **Key Settings**: ID, TaskQueue, WorkflowExecutionTimeout, WorkflowRunTimeout
-
-### Retry Policy
-- **Type**: `temporal.RetryPolicy`
-- **Documentation**: https://docs.temporal.io/encyclopedia/retry-policies
-
-## Advanced Patterns
-
-### Child Workflows
-- **Documentation**: https://docs.temporal.io/encyclopedia/child-workflows
-- **Function**: `workflow.ExecuteChildWorkflow()`
-
-**Usage:**
-```go
-cwo := workflow.ChildWorkflowOptions{
-    WorkflowID: "child-workflow-id",
-}
-ctx = workflow.WithChildOptions(ctx, cwo)
-
-var result string
-err := workflow.ExecuteChildWorkflow(ctx, ChildWorkflow, "input").Get(ctx, &result)
-```
-
-### Signals and Queries
-- **Signals Documentation**: https://docs.temporal.io/encyclopedia/workflow-message-passing#sending-signals
-- **Queries Documentation**: https://docs.temporal.io/encyclopedia/workflow-message-passing#sending-queries
-
-**Signal Example:**
-```go
-// In workflow - receiving signal
-signalChan := workflow.GetSignalChannel(ctx, "my-signal")
-var signalVal string
-signalChan.Receive(ctx, &signalVal)
-
-// From client - sending signal
-err := c.SignalWorkflow(ctx, workflowID, runID, "my-signal", signalValue)
-```
-
-**Query Example:**
+<pattern name="queries">
+### Queries (Read Workflow State)
 ```go
 // In workflow - define query handler
+var status string
 err := workflow.SetQueryHandler(ctx, "get-status", func() (string, error) {
-    return currentStatus, nil
+    return status, nil
 })
 
 // From client - send query
 response, err := c.QueryWorkflow(ctx, workflowID, runID, "get-status")
-var status string
-err = response.Get(&status)
+var result string
+err = response.Get(&result)
 ```
+</pattern>
 
-### Continue-As-New
-- **Documentation**: https://docs.temporal.io/workflows#continue-as-new
-- **Use Case**: Prevent workflow history from growing too large in long-running workflows
-- **Function**: `workflow.NewContinueAsNewError()`
+<pattern name="child-workflow">
+### Child Workflow
+```go
+cwo := workflow.ChildWorkflowOptions{
+    WorkflowID: "child-" + workflow.GetInfo(ctx).WorkflowExecution.ID,
+}
+ctx = workflow.WithChildOptions(ctx, cwo)
 
-**Usage:**
+var result string
+err := workflow.ExecuteChildWorkflow(ctx, ChildWorkflow, input).Get(ctx, &result)
+```
+</pattern>
+
+<pattern name="continue-as-new">
+### Continue-As-New (Prevent History Growth)
 ```go
 if workflow.GetInfo(ctx).GetCurrentHistoryLength() > 10000 {
-    return "", workflow.NewContinueAsNewError(ctx, MyWorkflow, newInput)
+    return workflow.NewContinueAsNewError(ctx, MyWorkflow, newInput)
 }
 ```
+</pattern>
 
-### Async Activity Completion
-- **Documentation**: https://docs.temporal.io/activities#asynchronous-activity-completion
-- **Use Case**: Activity completes outside the worker process
-
-**Usage:**
+<pattern name="saga-compensation">
+### Saga Pattern (Distributed Transaction with Compensation)
 ```go
-// In activity
-info := activity.GetInfo(ctx)
-taskToken := info.TaskToken
-// Store taskToken, return activity.ErrResultPending
-
-// Later, complete asynchronously
-c.CompleteActivity(ctx, taskToken, result, nil)
-```
-
-### Saga Pattern (Compensation)
-- **Documentation**: https://docs.temporal.io/encyclopedia/saga-pattern
-
-**Usage:**
-```go
-var compensations []func(context.Context) error
+var compensations []func(workflow.Context) error
 
 // Step 1
-err := workflow.ExecuteActivity(ctx, Step1Activity).Get(ctx, nil)
+err := workflow.ExecuteActivity(ctx, ChargeCard, amount).Get(ctx, nil)
 if err != nil {
     return err
 }
-compensations = append(compensations, CompensateStep1)
+compensations = append(compensations, func(ctx workflow.Context) error {
+    return workflow.ExecuteActivity(ctx, RefundCard, amount).Get(ctx, nil)
+})
 
 // Step 2
-err = workflow.ExecuteActivity(ctx, Step2Activity).Get(ctx, nil)
+err = workflow.ExecuteActivity(ctx, ReserveInventory, itemID).Get(ctx, nil)
 if err != nil {
     // Compensate in reverse order
     for i := len(compensations) - 1; i >= 0; i-- {
-        workflow.ExecuteActivity(ctx, compensations[i]).Get(ctx, nil)
+        compensations[i](ctx)
     }
     return err
 }
 ```
+</pattern>
 
+<pattern name="retry-policy">
+### Retry Policy Configuration
+```go
+ao := workflow.ActivityOptions{
+    StartToCloseTimeout: 10 * time.Minute,
+    RetryPolicy: &temporal.RetryPolicy{
+        InitialInterval:        time.Second,
+        BackoffCoefficient:     2.0,
+        MaximumInterval:        time.Minute,
+        MaximumAttempts:        5,
+        NonRetryableErrorTypes: []string{"InvalidInputError"},
+    },
+}
+ctx = workflow.WithActivityOptions(ctx, ao)
+```
+</pattern>
+
+<pattern name="heartbeat">
+### Activity Heartbeat (Long-Running Activities)
+```go
+func LongRunningActivity(ctx context.Context, items []string) error {
+    for i, item := range items {
+        // Check for cancellation
+        if ctx.Err() != nil {
+            return ctx.Err()
+        }
+
+        // Report progress
+        activity.RecordHeartbeat(ctx, i)
+
+        // Do work
+        processItem(item)
+    }
+    return nil
+}
+```
+
+Configure heartbeat timeout in workflow:
+```go
+ao := workflow.ActivityOptions{
+    StartToCloseTimeout: time.Hour,
+    HeartbeatTimeout:    time.Minute,
+}
+```
+</pattern>
+</patterns>
+
+<testing>
 ## Testing
 
-### Test Framework
-- **Documentation**: https://docs.temporal.io/develop/go/testing
-- **Key Package**: `go.temporal.io/sdk/testsuite`
-
-**Workflow Unit Test:**
+<pattern name="workflow-test">
+### Workflow Unit Test
 ```go
-import (
-    "testing"
-    "github.com/stretchr/testify/mock"
-    "github.com/stretchr/testify/require"
-    "go.temporal.io/sdk/testsuite"
-)
-
-func TestMyWorkflow(t *testing.T) {
+func TestProcessOrder(t *testing.T) {
     testSuite := &testsuite.WorkflowTestSuite{}
     env := testSuite.NewTestWorkflowEnvironment()
 
-    // Mock activity
-    env.OnActivity(MyActivity, mock.Anything, "input").Return("output", nil)
+    // Mock activity - use explicit expectations
+    env.OnActivity(ProcessPayment, mock.Anything, "order-123").Return("success", nil)
 
-    env.ExecuteWorkflow(MyWorkflow, "input")
+    env.ExecuteWorkflow(ProcessOrder, "order-123")
 
     require.True(t, env.IsWorkflowCompleted())
     require.NoError(t, env.GetWorkflowError())
 
     var result string
     require.NoError(t, env.GetWorkflowResult(&result))
-    require.Equal(t, "expected", result)
+    require.Equal(t, "success", result)
 }
 ```
+</pattern>
 
-**Activity Unit Test:**
+<pattern name="activity-test">
+### Activity Unit Test
 ```go
-func TestMyActivity(t *testing.T) {
+func TestProcessPayment(t *testing.T) {
     testSuite := &testsuite.WorkflowTestSuite{}
     env := testSuite.NewTestActivityEnvironment()
+    env.RegisterActivity(ProcessPayment)
 
-    env.RegisterActivity(MyActivity)
-
-    result, err := env.ExecuteActivity(MyActivity, "input")
+    result, err := env.ExecuteActivity(ProcessPayment, "order-123")
     require.NoError(t, err)
 
     var output string
     require.NoError(t, result.Get(&output))
-    require.Equal(t, "expected", output)
+    require.Contains(t, output, "order-123")
 }
 ```
+</pattern>
 
-**Testing Time-Dependent Logic:**
+<pattern name="test-time-control">
+### Control Time in Tests
 ```go
-// Control workflow.Now(ctx) in tests
 env.SetStartTime(time.Date(2024, 1, 15, 10, 0, 0, 0, time.UTC))
 ```
+</pattern>
 
+<pattern name="table-driven-test">
 ### Table-Driven Tests
-
-Use table-driven tests for comprehensive coverage:
-
 ```go
-func TestValidateInput(t *testing.T) {
-    type testCase struct {
-        name     string
-        input    string
-        expected error
-        wantErr  bool
-    }
-
-    tests := []testCase{
-        {
-            name:     "valid input",
-            input:    "valid@example.com",
-            expected: nil,
-            wantErr:  false,
-        },
-        {
-            name:     "empty input",
-            input:    "",
-            expected: ErrEmptyInput,
-            wantErr:  true,
-        },
+func TestValidateOrder(t *testing.T) {
+    tests := []struct {
+        name    string
+        input   string
+        wantErr bool
+    }{
+        {"valid order", "order-123", false},
+        {"empty order", "", true},
     }
 
     for _, tt := range tests {
         t.Run(tt.name, func(t *testing.T) {
-            err := ValidateInput(tt.input)
+            err := ValidateOrder(tt.input)
             if tt.wantErr {
                 require.Error(t, err)
-                require.Equal(t, tt.expected, err)
             } else {
                 require.NoError(t, err)
             }
@@ -431,24 +395,10 @@ func TestValidateInput(t *testing.T) {
     }
 }
 ```
+</pattern>
+</testing>
 
-### Mock Best Practices
-
-**Prefer explicit mock expectations over permissive matchers:**
-
-```go
-// Bad - too permissive
-env.OnActivity(MyActivity, mock.Anything, mock.Anything).Return("result", nil)
-
-// Good - explicit expectations (mock.Anything acceptable for context)
-env.OnActivity(MyActivity, mock.Anything, "expected-input").Return("result", nil)
-
-// Good - custom matcher for complex cases
-env.OnActivity(MyActivity, mock.Anything, mock.MatchedBy(func(req *Request) bool {
-    return req.Name == "test" && req.ID > 0
-})).Return("result", nil)
-```
-
+<connection>
 ## Connection Configuration
 
 ### Local Development
@@ -475,150 +425,100 @@ c, err := client.Dial(client.Options{
     },
 })
 ```
+</connection>
 
+<best-practices>
 ## Best Practices
 
-**Key Points:**
-1. **Workflows must be deterministic**: https://docs.temporal.io/develop/go/core-application#workflow-logic-requirements
-2. Use `workflow.GetLogger(ctx)` for workflow logging (replay-safe)
-3. Set appropriate timeouts for workflows and activities
-4. Configure retry policies for transient failures
-5. Use activity heartbeats for long-running operations: `activity.RecordHeartbeat(ctx, details)`
-6. Design activities to be idempotent
-7. Use Continue-As-New for long-running workflows
-8. Use versioning for safe workflow updates
-9. Register activities with name prefixes to avoid collisions
-10. Prefer regular functions over receiver methods for workflows (unless dependencies needed)
+1. **Workflows must be deterministic** - use `workflow.*` alternatives
+2. **Use `workflow.GetLogger(ctx)`** - prevents duplicate logs during replay
+3. **Set appropriate timeouts** - StartToCloseTimeout, HeartbeatTimeout
+4. **Configure retry policies** - for transient failures
+5. **Use heartbeats** - for activities > 30 seconds
+6. **Design idempotent activities** - safe to retry
+7. **Use Continue-As-New** - for workflows with large history
+8. **Use versioning** - for backward-compatible workflow changes
+9. **Register activities with prefixes** - avoid naming collisions
+10. **Prefer regular functions** - over receiver methods for workflows
 
-**Workflow Function Style:**
+### Workflow Function Style
 
 ```go
-// Preferred - regular function (easier to test, no hidden state)
+// PREFERRED: Regular function (easier to test)
 func ProcessOrder(ctx workflow.Context, orderID string) error {
-    // workflow logic
+    return nil
 }
 
-// Use receiver method only when injected dependencies are needed
+// USE ONLY when injected dependencies needed
 type OrderWorkflow struct {
-    notifier NotificationService // injected dependency
+    notifier NotificationService
 }
 
 func (w *OrderWorkflow) Process(ctx workflow.Context, orderID string) error {
-    return w.notifier.Send(ctx, "order processed")
+    return w.notifier.Send(ctx, "done")
 }
 ```
 
-**Serialization Requirements:**
-- Workflow/Activity inputs and outputs must be serializable
-- Avoid channels, functions, or interfaces in parameters/return values
-- Use structs with exported fields for complex data
+### Serialization Requirements
+- Inputs/outputs must be serializable (JSON by default)
+- Use structs with exported fields
+- Avoid: channels, functions, interfaces
+</best-practices>
 
-## Code Style Guidelines
-
-**Go Conventions:**
-```go
-// Group const, type, and var declarations at file top
-const (
-    TaskQueueName = "my-task-queue"
-    DefaultTimeout = 10 * time.Minute
-)
-
-type (
-    OrderID   string
-    AccountID string
-)
-
-var (
-    ErrNotFound = errors.New("not found")
-)
-```
-
-**Avoid name stuttering:**
-```go
-// Bad
-type Order struct {
-    OrderID     string
-    OrderStatus string
-}
-
-// Good
-type Order struct {
-    ID     string
-    Status string
-}
-```
-
-## Code Examples and Samples
-
-**Comprehensive Sample Reference:**
-- **Detailed Sample Guide**: See `references/samples.md` for categorized samples with descriptions
-  - Hello samples (getting started)
-  - Scenario-based samples (real-world patterns)
-  - Advanced features (interceptors, encryption, metrics)
-  - Testing examples
-
-**Direct Links:**
-- **Samples Repository**: https://github.com/temporalio/samples-go
-- **Interactive Tutorials**: https://learn.temporal.io/
-
-**Quick Sample Lookup by Use Case:**
-- Getting started: `helloworld/`
-- Signals/Queries: `signals/`, `query/`
-- Child workflows: `child-workflow/`
-- SAGA pattern: `expense/`
-- See `references/samples.md` for complete categorized list
-
-## Common Questions
-
-**API Questions:**
-- Search the API docs: https://pkg.go.dev/go.temporal.io/sdk
-- Look for specific types in the appropriate package
-
-**Troubleshooting:**
-- Community forum: https://community.temporal.io/
-- GitHub issues: https://github.com/temporalio/sdk-go/issues
-- Slack: https://temporal.io/slack
-
+<project-structure>
 ## Project Structure
 
-Standard Go project structure:
+### Standard Structure
 ```
 my-temporal-project/
 ├── go.mod
-├── go.sum
 ├── cmd/
-│   ├── worker/
-│   │   └── main.go          # Worker entry point
-│   └── client/
-│       └── main.go          # Client/starter
+│   ├── worker/main.go
+│   └── client/main.go
 ├── internal/
 │   ├── workflows/
-│   │   ├── order.go         # Workflow definitions
-│   │   └── order_test.go    # Workflow tests
+│   │   ├── order.go
+│   │   └── order_test.go
 │   └── activities/
-│       ├── payment.go       # Activity definitions
-│       └── payment_test.go  # Activity tests
-└── pkg/                     # Shared packages
+│       ├── payment.go
+│       └── payment_test.go
+└── pkg/
 ```
 
-**Alternative Structure (Entity-Driven):**
+### Entity-Driven Structure
 ```
 my-temporal-project/
 ├── entities/
 │   ├── account/
 │   │   ├── workflows.go
 │   │   ├── activities.go
-│   │   └── fx.go            # Dependency injection setup
+│   │   └── fx.go
 │   └── order/
 │       ├── workflows.go
 │       ├── activities.go
 │       └── fx.go
-├── cmd/
-│   └── worker/
-│       └── main.go
-└── internal/
-    └── common/
-        └── workflowutil/    # Shared workflow utilities
+├── cmd/worker/main.go
+└── internal/common/workflowutil/
 ```
+</project-structure>
 
-Refer to the samples repository for concrete examples: https://github.com/temporalio/samples-go
+<samples-reference>
+## Samples Quick Reference
+
+| Use Case | Sample |
+|----------|--------|
+| Getting started | `helloworld/` |
+| Signals | `signals/` |
+| Queries | `query/` |
+| Child workflows | `child-workflow/` |
+| SAGA/compensation | `expense/` |
+| Cron/schedules | `schedule/`, `cron/` |
+| Long-running activities | `heartbeat/` |
+| Encryption | `encryption/` |
+| Interceptors | `interceptor/` |
+| Worker versioning | `worker-versioning/` |
+
+**Full samples**: https://github.com/temporalio/samples-go
+
+**Detailed samples guide**: See `references/samples.md`
+</samples-reference>
