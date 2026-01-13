@@ -185,14 +185,53 @@ if v == workflow.DefaultVersion {
 }
 ```
 
-**Cleanup after retention period (e.g., 90 days):**
+**Cleanup after your namespace's retention period:**
+
+Check your namespace's retention period setting (configured in namespace settings, commonly 30, 60, or 90 days). Once this period passes, all workflow histories using the old code will be purged, making it safe to remove the versioning code.
+
+The cleanup is done in 2 steps:
+
 ```go
-// Step 1: Keep GetVersion, remove old branch
+// Step 1: Keep GetVersion, remove old branch (first PR)
 _ = workflow.GetVersion(ctx, "add-notification-2024-01-15", workflow.DefaultVersion, 1)
 newLogic()
 
-// Step 2 (separate PR): Remove GetVersion entirely
+// Step 2: Remove GetVersion entirely (separate PR after deployment)
 newLogic()
+```
+
+Why 2 steps? To avoid non-determinism in new workflows if the first PR has to be rolled back.
+</pattern>
+
+<pattern name="workflow-name-strings">
+### Using Workflow Name Strings
+When executing child workflows or starting workflows, use the **registered workflow name string** instead of the function reference:
+
+```go
+// WRONG - function reference
+workflow.ExecuteChildWorkflow(ctx, MyChildWorkflow, input)
+
+// CORRECT - registered workflow name string
+workflow.ExecuteChildWorkflow(ctx, MyChildWorkflowName, input)
+```
+
+Why this matters:
+1. Matches how workflows are registered with `workflow.RegisterOptions{Name: workflowName}`
+2. Avoids potential issues with function references across packages
+3. Makes workflow invocation consistent and explicit
+
+**Pattern:**
+```go
+// Define workflow name constant
+const MyChildWorkflowName = "MyChildWorkflow"
+
+// Register with name
+w.RegisterWorkflowWithOptions(MyChildWorkflow, workflow.RegisterOptions{
+    Name: MyChildWorkflowName,
+})
+
+// Execute using name string
+workflow.ExecuteChildWorkflow(ctx, MyChildWorkflowName, input)
 ```
 </pattern>
 
@@ -363,36 +402,102 @@ func TestProcessPayment(t *testing.T) {
 ```
 </pattern>
 
-<pattern name="test-time-control">
-### Control Time in Tests
-```go
-env.SetStartTime(time.Date(2024, 1, 15, 10, 0, 0, 0, time.UTC))
-```
-</pattern>
-
 <pattern name="table-driven-test">
 ### Table-Driven Tests
+**Use named structs and snake_case for test names:**
+
 ```go
 func TestValidateOrder(t *testing.T) {
-    tests := []struct {
-        name    string
-        input   string
-        wantErr bool
-    }{
-        {"valid order", "order-123", false},
-        {"empty order", "", true},
+    type testCase struct {
+        name     string
+        input    string
+        expected error
+        wantErr  bool
+    }
+
+    tests := []testCase{
+        {
+            name:     "valid_order",  // Use snake_case
+            input:    "order-123",
+            expected: nil,
+            wantErr:  false,
+        },
+        {
+            name:     "empty_order",  // Not "empty order"
+            input:    "",
+            expected: ErrEmptyInput,
+            wantErr:  true,
+        },
     }
 
     for _, tt := range tests {
         t.Run(tt.name, func(t *testing.T) {
             err := ValidateOrder(tt.input)
+
             if tt.wantErr {
                 require.Error(t, err)
+                require.Equal(t, tt.expected, err)
             } else {
                 require.NoError(t, err)
             }
         })
     }
+}
+```
+
+**Why snake_case?** Go's test runner converts spaces to underscores in output, so using snake_case keeps test names consistent and searchable.
+</pattern>
+
+<pattern name="test-mock-expectations">
+### Mock Expectations Best Practices
+**Avoid using `mock.Anything` - be explicit:**
+
+```go
+// WRONG - too permissive
+env.OnActivity(ProcessPayment, mock.Anything, mock.Anything).Return("success", nil)
+
+// CORRECT - explicit expectations
+env.OnActivity(ProcessPayment, mock.Anything, "order-123").Return("success", nil)
+//                              ^^^^^^^^^^^^  ^^^^^^^^^^^^^
+//                              context OK    explicit input
+```
+
+**Exception:** Use `mock.Anything` only for:
+1. `context.Context` parameters (timing/values vary)
+2. Complex inputs that need custom matchers with `mock.MatchedBy()`
+
+```go
+// Custom matcher for complex validation
+env.OnActivity(
+    ProcessPayment,
+    mock.Anything, // context
+    mock.MatchedBy(func(req *PaymentRequest) bool {
+        return req.Amount > 0 && req.Currency == "USD"
+    }),
+).Return("success", nil)
+```
+
+This ensures tests catch regressions and are explicit about expectations.
+</pattern>
+
+<pattern name="test-workflow-time">
+### Mock Workflow Start Time
+Control `workflow.Now(ctx)` in tests:
+
+```go
+func TestTimeBasedWorkflow(t *testing.T) {
+    testSuite := &testsuite.WorkflowTestSuite{}
+    env := testSuite.NewTestWorkflowEnvironment()
+
+    // Set specific start time
+    startTime := time.Date(2024, 1, 15, 10, 0, 0, 0, time.UTC)
+    env.SetStartTime(startTime)
+
+    // Now workflow.Now(ctx) returns this time
+    env.ExecuteWorkflow(TimeBasedWorkflow)
+
+    // Test time-dependent logic
+    require.True(t, env.IsWorkflowCompleted())
 }
 ```
 </pattern>
