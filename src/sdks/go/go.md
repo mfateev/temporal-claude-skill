@@ -60,7 +60,7 @@ Workflows MUST be deterministic. Use Temporal alternatives:
 // WRONG - non-deterministic
 for k, v := range myMap { }
 
-// CORRECT - deterministic
+// CORRECT - manually sort keys
 keys := make([]string, 0, len(myMap))
 for k := range myMap {
     keys = append(keys, k)
@@ -69,7 +69,18 @@ sort.Strings(keys)
 for _, k := range keys {
     v := myMap[k]
 }
+
+// BETTER - use determinism helpers (if available)
+// Some codebases provide helper packages for deterministic operations
+import "your-project/internal/determinism"
+
+for _, item := range determinism.IterMap(myMap) {
+    k, v := item.Key, item.Value
+    // Process k, v
+}
 ```
+
+**Note:** The determinism helper pattern is used in production codebases like Temporal's SaaS Control Plane to make deterministic iteration easier and less error-prone.
 </example>
 </determinism-rules>
 
@@ -499,6 +510,70 @@ func TestTimeBasedWorkflow(t *testing.T) {
     // Test time-dependent logic
     require.True(t, env.IsWorkflowCompleted())
 }
+```
+</pattern>
+
+<pattern name="workflow-replay-testing">
+### Workflow Replay Testing (Catch Non-Determinism)
+**Use workflow history replay to catch determinism issues in production code:**
+
+Replay testing executes a workflow using recorded history to ensure the code produces the same decisions. This catches non-determinism bugs that would break running workflows.
+
+**Step 1: Export workflow history from Temporal**
+```bash
+# Get workflow history as JSON
+temporal workflow show \
+  --workflow-id <workflow-id> \
+  --namespace <namespace> \
+  --output json > workflow-history.json
+```
+
+**Step 2: Create replay test**
+```go
+func TestWorkflowReplay(t *testing.T) {
+    replayer := worker.NewWorkflowReplayer()
+
+    // Register the workflow to test
+    replayer.RegisterWorkflow(MyWorkflow)
+
+    // Replay from exported history file
+    err := replayer.ReplayWorkflowHistoryFromJSONFile(nil, "testdata/workflow-history.json")
+
+    // If workflow is non-deterministic, this will error with:
+    // "nondeterministic workflow definition"
+    require.NoError(t, err, "Workflow replay should succeed")
+}
+```
+
+**Step 3: Add to CI/CD**
+```go
+// Test multiple production histories
+func TestProductionWorkflowReplays(t *testing.T) {
+    replayer := worker.NewWorkflowReplayer()
+    replayer.RegisterWorkflow(ProcessOrder)
+    replayer.RegisterWorkflow(HandleRefund)
+
+    histories := []string{
+        "testdata/order-success.json",
+        "testdata/order-with-retry.json",
+        "testdata/refund-flow.json",
+    }
+
+    for _, history := range histories {
+        t.Run(history, func(t *testing.T) {
+            err := replayer.ReplayWorkflowHistoryFromJSONFile(nil, history)
+            require.NoError(t, err)
+        })
+    }
+}
+```
+
+**Use Case:** Run replay tests in CI to catch determinism bugs before deploying workflow code changes.
+
+**Advanced: Partial replay to specific event**
+```go
+// Replay only up to event ID 16 (useful for debugging)
+err := replayer.ReplayPartialWorkflowHistoryFromJSONFile(nil, "history.json", 16)
 ```
 </pattern>
 </testing>
