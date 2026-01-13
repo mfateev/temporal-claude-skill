@@ -6,6 +6,7 @@
 | Task | Code/Command |
 |------|--------------|
 | Install SDK | `go get go.temporal.io/sdk` |
+| Install determinism linter | `go install go.temporal.io/sdk/contrib/tools/workflowcheck@latest` |
 | Workflow signature | `func MyWorkflow(ctx workflow.Context, input T) (R, error)` |
 | Activity signature | `func MyActivity(ctx context.Context, input T) (R, error)` |
 | Execute activity | `workflow.ExecuteActivity(ctx, MyActivity, input).Get(ctx, &result)` |
@@ -15,6 +16,7 @@
 | Spawn goroutine | `workflow.Go(ctx, func(ctx workflow.Context) { ... })` |
 | Get logger | `workflow.GetLogger(ctx)` |
 | Version gate | `workflow.GetVersion(ctx, "change-id", workflow.DefaultVersion, 1)` |
+| Check determinism | `workflowcheck ./...` |
 
 **Import Paths:**
 ```go
@@ -82,6 +84,67 @@ for _, item := range determinism.IterMap(myMap) {
 
 **Note:** The determinism helper pattern is used in production codebases like Temporal's SaaS Control Plane to make deterministic iteration easier and less error-prone.
 </example>
+
+### Catching Determinism Errors with Workflowcheck
+
+**Use the official SDK linter to catch determinism violations:**
+
+The `workflowcheck` tool is a static analyzer from the Temporal Go SDK that detects common determinism violations in your code.
+
+**Install:**
+```bash
+go install go.temporal.io/sdk/contrib/tools/workflowcheck@latest
+```
+
+**Run:**
+```bash
+# Check all packages
+workflowcheck ./...
+
+# With config file
+workflowcheck -config .workflowcheck.yaml ./...
+```
+
+**What it catches:**
+- Using `time.Now()` instead of `workflow.Now(ctx)`
+- Using `time.Sleep()` instead of `workflow.Sleep(ctx, d)`
+- Using `rand.*` instead of `workflow.SideEffect()`
+- Using regular `map` iteration instead of sorted iteration
+- Using `go func()` instead of `workflow.Go(ctx, fn)`
+- And other determinism violations
+
+**Configuration (.workflowcheck.yaml):**
+```yaml
+# Suppress false positives for specific functions
+decls:
+  your-package/helper.SafeMapCopy: false  # Don't check this function
+  maps.Copy: false  # Standard library function is safe
+
+# Skip generated files
+skip:
+  - '.*_mock.go'
+  - '.*_gen.go'
+```
+
+**Suppress inline with comments:**
+```go
+//workflowcheck:ignore
+for k, v := range myMap {
+    // Safe because we only read, don't modify based on order
+}
+```
+
+**Add to CI/CD:**
+```yaml
+# .github/workflows/pull-request.yml
+- name: Install workflowcheck
+  run: go install go.temporal.io/sdk/contrib/tools/workflowcheck@latest
+
+- name: Run workflowcheck
+  run: workflowcheck -config .workflowcheck.yaml ./...
+```
+
+**Best Practice:** Run `workflowcheck` in your CI pipeline to catch determinism issues before they reach production.
 </determinism-rules>
 
 <patterns>
@@ -611,15 +674,16 @@ c, err := client.Dial(client.Options{
 ## Best Practices
 
 1. **Workflows must be deterministic** - use `workflow.*` alternatives
-2. **Use `workflow.GetLogger(ctx)`** - prevents duplicate logs during replay
-3. **Set appropriate timeouts** - StartToCloseTimeout, HeartbeatTimeout
-4. **Configure retry policies** - for transient failures
-5. **Use heartbeats** - for activities > 30 seconds
-6. **Design idempotent activities** - safe to retry
-7. **Use Continue-As-New** - for workflows with large history
-8. **Use versioning** - for backward-compatible workflow changes
-9. **Register activities with prefixes** - avoid naming collisions
-10. **Prefer regular functions** - over receiver methods for workflows
+2. **Run `workflowcheck` linter** - catch determinism violations in CI/CD
+3. **Use `workflow.GetLogger(ctx)`** - prevents duplicate logs during replay
+4. **Set appropriate timeouts** - StartToCloseTimeout, HeartbeatTimeout
+5. **Configure retry policies** - for transient failures
+6. **Use heartbeats** - for activities > 30 seconds
+7. **Design idempotent activities** - safe to retry
+8. **Use Continue-As-New** - for workflows with large history
+9. **Use versioning** - for backward-compatible workflow changes
+10. **Register activities with prefixes** - avoid naming collisions
+11. **Prefer regular functions** - over receiver methods for workflows
 
 ### Workflow Function Style
 
