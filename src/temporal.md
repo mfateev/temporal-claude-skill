@@ -60,9 +60,19 @@ This skill includes detailed resources for each Temporal SDK. Choose the SDK tha
 **Official docs**: https://docs.temporal.io/develop/typescript
 
 ### Go SDK
-**Resource**: `sdks/go/go.md` *(Coming soon)*
-**Status**: 🚧 Planned
+**Resource**: `sdks/go/go.md`
+**Status**: ✅ Complete
 **Best for**: High-performance services, infrastructure tools, system programming
+
+**What's included**:
+- Complete SDK reference guide
+- Go module dependency management
+- Workflow determinism rules and alternatives
+- Activity registration with prefixes
+- Versioning patterns and cleanup process
+- Comprehensive samples catalog
+- Testing strategies with testsuite
+- Production best practices from real-world usage
 
 **Official docs**: https://docs.temporal.io/develop/go
 
