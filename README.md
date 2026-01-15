@@ -161,8 +161,17 @@ When you ask Claude about Temporal with this skill installed, Claude can help yo
 **Location**: `src/sdks/typescript/typescript.md` *(Coming soon)*
 
 ### Go SDK
-**Status**: 🚧 Planned
-**Location**: `src/sdks/go/go.md` *(Coming soon)*
+**Status**: ✅ Complete
+**Location**: `src/sdks/go/go.md`
+**Features**:
+- Complete Go SDK reference guide
+- Go module dependency management
+- Workflow determinism rules and alternatives
+- Activity registration patterns
+- Versioning patterns and cleanup process
+- Comprehensive samples catalog
+- Testing strategies with testsuite
+- Production best practices
 
 ### .NET SDK
 **Status**: 🚧 Planned

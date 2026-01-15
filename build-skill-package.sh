@@ -185,9 +185,9 @@ The skill will:
 ## Supported SDKs
 
 ✅ **Java**: Complete reference with Spring Boot integration
-🚧 **Python**: Coming soon
+✅ **Python**: Complete reference with FastAPI/Django/Flask integration
+✅ **Go**: Complete reference with determinism rules and best practices
 🚧 **TypeScript**: Coming soon
-🚧 **Go**: Coming soon
 🚧 **.NET**: Coming soon
 🚧 **PHP**: Coming soon
 
